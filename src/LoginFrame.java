@@ -45,7 +45,7 @@ public class LoginFrame extends JFrame {
         add(panel);
 
         backButton.addActionListener(e -> {
-            new SearchFlightFrame(authService, null);
+            new MainFrame(authService);
             dispose();
         });
 

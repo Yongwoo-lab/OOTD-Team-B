@@ -2,7 +2,13 @@ import javax.swing.*;
 import java.awt.*;
 
 public class ReservationFrame extends JFrame {
+    private final ReservationController reservationController = new ReservationController();
+
     public ReservationFrame(AuthService authService, Customer currentUser, String selectedFlight) {
+        this(authService, currentUser, selectedFlight, null);
+    }
+
+    public ReservationFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation existingReservation) {
         setTitle("Reservation");
         setSize(500, 350);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -24,11 +30,18 @@ public class ReservationFrame extends JFrame {
             flightInfo = "No flight selected.";
         }
 
+        Reservation reservation = existingReservation != null
+                ? existingReservation
+                : reservationController.bookFlight(currentUser, selectedFlight);
+
         infoArea.setText(
-                "Login completed.\n\n" +
+                "Basic reservation ready.\n\n" +
+                        "Reservation ID: " + reservation.getReservationId() + "\n" +
+                        "Reservation Status: " + reservation.getStatus() + "\n" +
                         "Selected Flight:\n" + flightInfo + "\n\n" +
                         "User Name: " + currentUser.getName() + "\n" +
-                        "User Type: " + currentUser.getUserType() + "\n"
+                        "User Type: " + currentUser.getUserType() + "\n" +
+                        "Total Fare: " + String.format("%,.0f KRW", reservation.getTotalFare()) + "\n"
         );
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
@@ -49,7 +62,7 @@ public class ReservationFrame extends JFrame {
         });
 
         nextButton.addActionListener(e -> {
-            new PaymentFrame(authService, currentUser, selectedFlight);
+            new PaymentFrame(authService, currentUser, selectedFlight, reservation, reservationController.getReservationService());
             dispose();
         });
 

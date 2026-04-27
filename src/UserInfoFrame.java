@@ -59,8 +59,8 @@ public class UserInfoFrame extends JFrame {
         });
 
         nextButton.addActionListener(e -> {
-            JOptionPane.showMessageDialog(this,
-                    "Next module will use currentUser.\nUser Type: " + currentUser.getUserType());
+            new SearchFlightFrame(authService, currentUser);
+            dispose();
         });
 
         setVisible(true);

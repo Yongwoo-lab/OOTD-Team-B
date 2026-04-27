@@ -35,7 +35,7 @@ public class MainFrame extends JFrame {
 
         loginButton.addActionListener(e -> {
             new LoginFrame(authService, user -> {
-                new UserInfoFrame(authService, user);
+                new SearchFlightFrame(authService, user);
             });
             dispose();
         });

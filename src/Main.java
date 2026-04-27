@@ -6,7 +6,8 @@ public class Main {
             AuthService authService = new AuthService();
             Customer currentUser = null;
 
-            new SearchFlightFrame(authService, currentUser);
+            new MainFrame(authService);
+
         });
     }
 }

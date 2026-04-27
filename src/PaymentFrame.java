@@ -2,7 +2,10 @@ import javax.swing.*;
 import java.awt.*;
 
 public class PaymentFrame extends JFrame {
-    public PaymentFrame(AuthService authService, Customer currentUser, String selectedFlight) {
+    private final PaymentController paymentController;
+
+    public PaymentFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation reservation, ReservationService reservationService) {
+        this.paymentController = new PaymentController(reservationService);
         setTitle("Payment");
         setSize(500, 350);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -61,7 +64,7 @@ public class PaymentFrame extends JFrame {
         add(panel);
 
         backButton.addActionListener(e -> {
-            new ReservationFrame(authService, currentUser, selectedFlight);
+            new ReservationFrame(authService, currentUser, selectedFlight, reservation);
             dispose();
         });
 
@@ -70,7 +73,30 @@ public class PaymentFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "Please enter payment information.");
                 return;
             }
-            JOptionPane.showMessageDialog(this, "Payment completed.");
+
+            String selectedMethod = (String) paymentMethodBox.getSelectedItem();
+            String paymentInfo = cardNumberField.getText().trim();
+            Ticket ticket = paymentController.processPayment(reservation, selectedMethod, paymentInfo);
+            if (ticket == null) {
+                Payment failedPayment = paymentController.getLastPayment(reservation);
+                String reason = failedPayment != null && failedPayment.getFailureReason() != null
+                        ? failedPayment.getFailureReason()
+                        : "Unknown reason";
+                JOptionPane.showMessageDialog(this,
+                        "Payment failed.\n" +
+                                "Reason: " + reason + "\n" +
+                                "Reservation Status: " + reservation.getStatus());
+                return;
+            }
+
+            JOptionPane.showMessageDialog(this,
+                    "Payment completed successfully.\n" +
+                            "Reservation ID: " + reservation.getReservationId() + "\n" +
+                            "Reservation Status: " + reservation.getStatus() + "\n" +
+                            "Ticket ID: " + ticket.getTicketId() + "\n" +
+                            "Issue Date: " + ticket.getIssueDate());
+            new MainFrame(authService);
+            dispose();
         });
 
         setVisible(true);

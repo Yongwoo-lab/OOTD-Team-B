@@ -10,20 +10,27 @@ public class ReservationFrame extends JFrame {
 
     public ReservationFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation existingReservation) {
         setTitle("Reservation");
-        setSize(500, 350);
+        setSize(560, 410);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
+        JPanel panel = AppTheme.createPagePanel();
 
-        JLabel titleLabel = new JLabel("Reservation", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        JPanel headerPanel = new JPanel(new GridLayout(2, 1, 4, 4));
+        headerPanel.setOpaque(false);
+        headerPanel.add(AppTheme.createTitle("Reservation"));
+        headerPanel.add(AppTheme.createSubtitle("Review your selected flight before payment."));
 
         JTextArea infoArea = new JTextArea();
         infoArea.setEditable(false);
         infoArea.setLineWrap(true);
         infoArea.setWrapStyleWord(true);
+        infoArea.setFont(new Font("Arial", Font.PLAIN, 13));
+        infoArea.setBackground(Color.WHITE);
+        infoArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(AppTheme.BORDER),
+                BorderFactory.createEmptyBorder(14, 14, 14, 14)
+        ));
 
         String flightInfo = selectedFlight;
         if (flightInfo == null || flightInfo.trim().isEmpty()) {
@@ -45,12 +52,13 @@ public class ReservationFrame extends JFrame {
         );
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        JButton backButton = new JButton("Back to Search");
-        JButton nextButton = new JButton("Next");
+        buttonPanel.setOpaque(false);
+        JButton backButton = AppTheme.createSecondaryButton("Back to Search");
+        JButton nextButton = AppTheme.createPrimaryButton("Next");
         buttonPanel.add(backButton);
         buttonPanel.add(nextButton);
 
-        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(infoArea, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 

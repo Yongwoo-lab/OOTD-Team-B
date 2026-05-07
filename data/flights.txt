@@ -1,0 +1,20 @@
+KE701|Incheon International Airport (ICN)|Tokyo Narita|2026-05-20|07:30|09:50|280000
+KE703|Incheon International Airport (ICN)|Tokyo Narita|2026-05-20|14:15|16:35|295000
+KE705|Incheon International Airport (ICN)|Tokyo Haneda|2026-05-21|09:10|11:25|315000
+KE711|Incheon International Airport (ICN)|Osaka Kansai|2026-05-21|08:05|09:55|260000
+KE713|Incheon International Airport (ICN)|Osaka Kansai|2026-05-22|16:40|18:30|275000
+KE081|Incheon International Airport (ICN)|New York JFK|2026-05-22|10:00|11:20|1320000
+KE085|Incheon International Airport (ICN)|New York JFK|2026-05-24|19:30|20:50|1280000
+KE017|Incheon International Airport (ICN)|Los Angeles|2026-05-23|14:30|09:50|1180000
+KE011|Incheon International Airport (ICN)|Los Angeles|2026-05-25|19:40|15:00|1210000
+KE901|Incheon International Airport (ICN)|Paris Charles de Gaulle|2026-05-23|11:10|18:30|1120000
+KE903|Incheon International Airport (ICN)|Paris Charles de Gaulle|2026-05-26|20:30|03:50|1080000
+KE907|Incheon International Airport (ICN)|London Heathrow|2026-05-24|12:50|18:35|1160000
+KE951|Incheon International Airport (ICN)|Dubai|2026-05-24|13:25|18:55|820000
+KE647|Incheon International Airport (ICN)|Singapore Changi|2026-05-25|23:10|04:45|560000
+KE651|Incheon International Airport (ICN)|Bangkok Suvarnabhumi|2026-05-25|17:20|21:15|430000
+KE657|Incheon International Airport (ICN)|Bangkok Suvarnabhumi|2026-05-26|09:30|13:25|410000
+KE475|Incheon International Airport (ICN)|Ho Chi Minh City|2026-05-26|18:40|22:10|390000
+KE621|Incheon International Airport (ICN)|Manila|2026-05-27|07:45|10:50|350000
+KE401|Incheon International Airport (ICN)|Sydney|2026-05-27|18:55|06:15|940000
+KE411|Incheon International Airport (ICN)|Auckland|2026-05-28|17:45|08:10|1050000

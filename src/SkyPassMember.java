@@ -2,7 +2,11 @@ public class SkyPassMember extends Customer {
     private int mileage;
 
     public SkyPassMember(String customerId, String name, String email, String password, int mileage) {
-        super(customerId, name, email, password);
+        this(customerId, name, email, "", password, mileage);
+    }
+
+    public SkyPassMember(String customerId, String name, String email, String phoneNumber, String password, int mileage) {
+        super(customerId, name, email, phoneNumber, password);
         this.mileage = mileage;
     }
 

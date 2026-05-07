@@ -1,131 +1,323 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.List;
 
 public class SearchFlightFrame extends JFrame {
+    private static final String FLIGHT_PLACEHOLDER = "-- Select destination or date first --";
+    private static final String NO_MATCHING_FLIGHTS = "-- No matching flights --";
+
     private AuthService authService;
     private Customer currentUser;
-
-    // {항공편번호, 목적지, 날짜, 출발시간, 도착시간, 가격}
-    private static final String[][] FLIGHTS = {
-        {"KE701", "Tokyo", "2026-04-26", "07:30", "09:50", "280,000"},
-        {"KE702", "Tokyo", "2026-04-27", "13:00", "15:20", "310,000"},
-        {"KE703", "Tokyo", "2026-04-28", "19:45", "22:05", "295,000"},
-        {"KE704", "Tokyo", "2026-04-29", "22:10", "00:30", "285,000"},
-
-        {"KE081", "New York", "2026-04-26", "09:00", "10:50", "1,300,000"},
-        {"KE082", "New York", "2026-04-28", "15:30", "17:20", "1,250,000"},
-        {"KE083", "New York", "2026-04-30", "20:00", "21:50", "1,320,000"},
-        {"KE084", "New York", "2026-05-02", "23:40", "01:30", "1,280,000"},
-
-        {"KE901", "Paris", "2026-04-27", "06:30", "13:20", "1,100,000"},
-        {"KE902", "Paris", "2026-04-29", "11:30", "18:20", "1,050,000"},
-        {"KE903", "Paris", "2026-05-01", "17:15", "00:05", "1,120,000"},
-        {"KE904", "Paris", "2026-05-03", "23:00", "05:50", "1,080,000"},
-    };
+    private MileageService mileageService = new MileageService();
+    private List<Flight> flights;
 
     public SearchFlightFrame(AuthService authService, Customer currentUser) {
         this.authService = authService;
         this.currentUser = currentUser;
+        this.flights = new FlightDatabase().loadFlights();
 
-        setTitle("Search Flights");
-        setSize(560, 420);
+        setTitle("Korean Air Booking");
+        setSize(860, 560);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
+        JPanel panel = AppTheme.createPagePanel();
+        panel.add(createTopBar(), BorderLayout.NORTH);
+        panel.add(createBookingPanel(), BorderLayout.CENTER);
 
-        JLabel titleLabel = new JLabel("Search Flights", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        add(panel);
+        setVisible(true);
+    }
 
-        JPanel formPanel = new JPanel(new GridLayout(3, 2, 10, 10));
+    private JPanel createTopBar() {
+        JPanel topBar = new JPanel(new BorderLayout(16, 16));
+        topBar.setOpaque(false);
 
-        // 1. 나라 선택 (중복 제거)
-        JComboBox<String> countryBox = new JComboBox<>();
-        countryBox.addItem("-- All Destinations --");
+        JPanel titlePanel = new JPanel(new GridLayout(2, 1, 2, 2));
+        titlePanel.setOpaque(false);
+
+        JLabel brandLabel = new JLabel("Korean Air Booking");
+        brandLabel.setForeground(AppTheme.NAVY);
+        brandLabel.setFont(new Font("Arial", Font.BOLD, 24));
+
+        JLabel subtitleLabel = new JLabel("Depart from Incheon and find a flight that fits your schedule.");
+        subtitleLabel.setForeground(AppTheme.MUTED);
+        subtitleLabel.setFont(new Font("Arial", Font.PLAIN, 13));
+
+        titlePanel.add(brandLabel);
+        titlePanel.add(subtitleLabel);
+
+        JPanel actionPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        actionPanel.setOpaque(false);
+
+        JLabel mileageLabel = AppTheme.createBadge(createMileageText());
+        JButton myPageButton = AppTheme.createSecondaryButton("My Page");
+        myPageButton.setEnabled(!(currentUser instanceof Guest));
+
+        actionPanel.add(mileageLabel);
+        actionPanel.add(myPageButton);
+
+        topBar.add(titlePanel, BorderLayout.CENTER);
+        topBar.add(actionPanel, BorderLayout.EAST);
+
+        myPageButton.addActionListener(e -> {
+            openMyPageAfterPasswordCheck();
+        });
+
+        return topBar;
+    }
+
+    private void openMyPageAfterPasswordCheck() {
+        JPasswordField passwordField = new JPasswordField();
+        AppTheme.styleField(passwordField);
+
+        JPanel panel = new JPanel(new GridLayout(1, 2, 10, 10));
+        panel.add(new JLabel("Password"));
+        panel.add(passwordField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Confirm Password", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) {
+            return;
+        }
+
+        String password = new String(passwordField.getPassword());
+        if (!currentUser.checkPassword(password)) {
+            JOptionPane.showMessageDialog(this, "Password is incorrect.");
+            return;
+        }
+
+        new UserInfoFrame(authService, currentUser);
+        dispose();
+    }
+
+    private JPanel createBookingPanel() {
+        JPanel bookingPanel = AppTheme.createCardPanel();
+        bookingPanel.setLayout(new BorderLayout(18, 18));
+
+        JPanel accentBar = new JPanel(new GridLayout(1, 2));
+        accentBar.setPreferredSize(new Dimension(10, 6));
+        JPanel blueBar = new JPanel();
+        JPanel redBar = new JPanel();
+        blueBar.setBackground(AppTheme.BLUE);
+        redBar.setBackground(AppTheme.RED);
+        accentBar.add(blueBar);
+        accentBar.add(redBar);
+
+        JPanel formPanel = new JPanel(new GridLayout(4, 2, 12, 12));
+        formPanel.setOpaque(false);
+
+        JComboBox<String> departureBox = new JComboBox<>();
+        departureBox.addItem("Incheon International Airport (ICN)");
+        AppTheme.styleComboBox(departureBox);
+
+        JComboBox<String> destinationBox = new JComboBox<>();
+        destinationBox.addItem("-- All Destinations --");
         java.util.LinkedHashSet<String> destinations = new java.util.LinkedHashSet<>();
-        for (String[] f : FLIGHTS) destinations.add(f[1]);
-        for (String d : destinations) countryBox.addItem(d);
+        for (Flight flight : flights) {
+            destinations.add(flight.getArrival());
+        }
+        for (String destination : destinations) {
+            destinationBox.addItem(destination);
+        }
 
-        // 2. 날짜 선택 (중복 제거)
         JComboBox<String> dateBox = new JComboBox<>();
         dateBox.addItem("-- All Dates --");
         java.util.LinkedHashSet<String> dates = new java.util.LinkedHashSet<>();
-        for (String[] f : FLIGHTS) dates.add(f[2]);
-        for (String d : dates) dateBox.addItem(d);
+        for (Flight flight : flights) {
+            dates.add(flight.getDate());
+        }
+        for (String date : dates) {
+            dateBox.addItem(date);
+        }
 
-        // Available Flights
         JComboBox<String> flightBox = new JComboBox<>();
-        populateFlights(flightBox, null, null);
+        showFlightPlaceholder(flightBox);
 
-        formPanel.add(new JLabel("Destination:"));
-        formPanel.add(countryBox);
-        formPanel.add(new JLabel("Date:"));
+        AppTheme.styleComboBox(destinationBox);
+        AppTheme.styleComboBox(dateBox);
+        AppTheme.styleComboBox(flightBox);
+
+        formPanel.add(createFormLabel("Departure Airport"));
+        formPanel.add(departureBox);
+        formPanel.add(createFormLabel("Destination"));
+        formPanel.add(destinationBox);
+        formPanel.add(createFormLabel("Date"));
         formPanel.add(dateBox);
-        formPanel.add(new JLabel("Available Flights:"));
+        formPanel.add(createFormLabel("Available Flights"));
         formPanel.add(flightBox);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        JButton searchButton = new JButton("Search");
-        JButton bookButton = new JButton("Book Selected Flight");
+        JTextArea summaryArea = createSummaryArea();
+        showEmptySummary(summaryArea);
+
+        JPanel centerPanel = new JPanel(new GridLayout(1, 2, 18, 18));
+        centerPanel.setOpaque(false);
+        centerPanel.add(formPanel);
+        centerPanel.add(summaryArea);
+
+        JPanel buttonPanel = new JPanel(new FlowLayout(FlowLayout.RIGHT, 10, 0));
+        buttonPanel.setOpaque(false);
+
+        JButton searchButton = AppTheme.createSecondaryButton("Search");
+        JButton bookButton = AppTheme.createPrimaryButton("Book Selected Flight");
+
         buttonPanel.add(searchButton);
         buttonPanel.add(bookButton);
 
-        panel.add(titleLabel, BorderLayout.NORTH);
-        panel.add(formPanel, BorderLayout.CENTER);
-        panel.add(buttonPanel, BorderLayout.SOUTH);
+        bookingPanel.add(accentBar, BorderLayout.NORTH);
+        bookingPanel.add(centerPanel, BorderLayout.CENTER);
+        bookingPanel.add(buttonPanel, BorderLayout.SOUTH);
 
-        add(panel);
+        flightBox.addActionListener(e -> updateFlightSummary(summaryArea, (String) flightBox.getSelectedItem()));
+
+        destinationBox.addActionListener(e -> applyFlightFilter(destinationBox, dateBox, flightBox, summaryArea));
+        dateBox.addActionListener(e -> applyFlightFilter(destinationBox, dateBox, flightBox, summaryArea));
 
         searchButton.addActionListener(e -> {
-            String selectedCountry = (String) countryBox.getSelectedItem();
-            String selectedDate = (String) dateBox.getSelectedItem();
-
-            if ("-- All Destinations --".equals(selectedCountry)) {
-                selectedCountry = null;
-            }
-            if ("-- All Dates --".equals(selectedDate)) {
-                selectedDate = null;
-            }
-
-            populateFlights(flightBox, selectedCountry, selectedDate);
-
-            if (flightBox.getItemCount() == 0) {
-                JOptionPane.showMessageDialog(this, "No matching flights found.\nTry a different date or destination.");
-            }
+            applyFlightFilter(destinationBox, dateBox, flightBox, summaryArea);
+            showNoFlightMessageIfNeeded(flightBox);
         });
 
         bookButton.addActionListener(e -> {
             String selectedFlight = (String) flightBox.getSelectedItem();
-            if (selectedFlight == null) {
+            if (!isSelectableFlight(selectedFlight)) {
                 JOptionPane.showMessageDialog(this, "Please search and select a flight first.");
                 return;
             }
+
             if (currentUser == null || currentUser instanceof Guest) {
                 JOptionPane.showMessageDialog(this, "Please login before booking.");
-                new LoginFrame(authService, user -> {
-                    new ReservationFrame(authService, user, selectedFlight);
-                });
+                new MainFrame(authService);
                 dispose();
-            } else {
-                new ReservationFrame(authService, currentUser, selectedFlight);
-                dispose();
+                return;
             }
+
+            new ReservationFrame(authService, currentUser, selectedFlight);
+            dispose();
         });
 
-        setVisible(true);
+        return bookingPanel;
     }
 
-    private void populateFlights(JComboBox<String> flightBox, String country, String date) {
+    private void applyFlightFilter(JComboBox<String> destinationBox, JComboBox<String> dateBox,
+                                   JComboBox<String> flightBox, JTextArea summaryArea) {
+        String selectedDestination = normalizeDestination((String) destinationBox.getSelectedItem());
+        String selectedDate = normalizeDate((String) dateBox.getSelectedItem());
+
+        if (selectedDestination == null && selectedDate == null) {
+            showFlightPlaceholder(flightBox);
+            showEmptySummary(summaryArea);
+            return;
+        }
+
+        populateFlights(flightBox, selectedDestination, selectedDate);
+        updateFlightSummary(summaryArea, (String) flightBox.getSelectedItem());
+    }
+
+    private void showNoFlightMessageIfNeeded(JComboBox<String> flightBox) {
+        if (flightBox.getItemCount() == 1 && NO_MATCHING_FLIGHTS.equals(flightBox.getItemAt(0))) {
+            JOptionPane.showMessageDialog(this, "No matching flights found.\nTry a different date or destination.");
+        }
+    }
+
+    private JTextArea createSummaryArea() {
+        JTextArea summaryArea = new JTextArea();
+        summaryArea.setEditable(false);
+        summaryArea.setLineWrap(true);
+        summaryArea.setWrapStyleWord(true);
+        summaryArea.setFont(new Font("Arial", Font.PLAIN, 13));
+        summaryArea.setForeground(AppTheme.TEXT);
+        summaryArea.setBackground(AppTheme.LIGHT_BLUE);
+        summaryArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(new Color(190, 211, 238)),
+                BorderFactory.createEmptyBorder(14, 14, 14, 14)
+        ));
+        return summaryArea;
+    }
+
+    private JLabel createFormLabel(String text) {
+        JLabel label = new JLabel(text);
+        label.setForeground(AppTheme.NAVY);
+        label.setFont(new Font("Arial", Font.BOLD, 13));
+        return label;
+    }
+
+    private String createMileageText() {
+        if (currentUser instanceof SkyPassMember) {
+            return "Mileage  " + mileageService.getMileageMessage(currentUser);
+        }
+        if (currentUser instanceof Guest) {
+            return "Guest Mode";
+        }
+        return "Mileage  SkyPass only";
+    }
+
+    private void populateFlights(JComboBox<String> flightBox, String destination, String date) {
         flightBox.removeAllItems();
-        for (String[] f : FLIGHTS) {
-            // f = {항공편번호, 목적지, 날짜, 출발시간, 도착시간, 가격}
-            boolean matchCountry = (country == null) || f[1].equals(country);
-            boolean matchDate    = (date == null)    || f[2].equals(date);
-            if (matchCountry && matchDate) {
-                flightBox.addItem(String.format("%s | Seoul -> %-10s | %s %s -> %s | %s KRW",
-                        f[0], f[1], f[2], f[3], f[4], f[5]));
+        for (Flight flight : flights) {
+            boolean matchDestination = (destination == null) || flight.getArrival().equals(destination);
+            boolean matchDate = (date == null) || flight.getDate().equals(date);
+            if (matchDestination && matchDate) {
+                flightBox.addItem(formatFlight(flight));
             }
         }
+
+        if (flightBox.getItemCount() == 0) {
+            flightBox.addItem(NO_MATCHING_FLIGHTS);
+        }
+    }
+
+    private void showFlightPlaceholder(JComboBox<String> flightBox) {
+        flightBox.removeAllItems();
+        flightBox.addItem(FLIGHT_PLACEHOLDER);
+    }
+
+    private String normalizeDestination(String destination) {
+        if (destination == null || "-- All Destinations --".equals(destination)) {
+            return null;
+        }
+        return destination;
+    }
+
+    private String normalizeDate(String date) {
+        if (date == null || "-- All Dates --".equals(date)) {
+            return null;
+        }
+        return date;
+    }
+
+    private String formatFlight(Flight flight) {
+        return String.format("%s | %s -> %-28s | %s %s -> %s | %,.0f KRW",
+                flight.getFlightId(),
+                flight.getDeparture(),
+                flight.getArrival(),
+                flight.getDate(),
+                flight.getDepartureTime(),
+                flight.getArrivalTime(),
+                flight.getPrice());
+    }
+
+    private void updateFlightSummary(JTextArea summaryArea, String selectedFlight) {
+        if (!isSelectableFlight(selectedFlight)) {
+            showEmptySummary(summaryArea);
+            return;
+        }
+
+        summaryArea.setText(
+                "Selected Flight\n\n" +
+                        selectedFlight + "\n\n" +
+                        "Passenger: " + currentUser.getName() + "\n" +
+                        "Member Type: " + currentUser.getUserType() + "\n" +
+                        createMileageText()
+        );
+    }
+
+    private void showEmptySummary(JTextArea summaryArea) {
+        summaryArea.setText("No flight selected.\n\nChoose a destination or date to see available flights.");
+    }
+
+    private boolean isSelectableFlight(String selectedFlight) {
+        return selectedFlight != null
+                && !FLIGHT_PLACEHOLDER.equals(selectedFlight)
+                && !NO_MATCHING_FLIGHTS.equals(selectedFlight);
     }
 }

@@ -7,20 +7,27 @@ public class PaymentFrame extends JFrame {
     public PaymentFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation reservation, ReservationService reservationService) {
         this.paymentController = new PaymentController(reservationService);
         setTitle("Payment");
-        setSize(500, 350);
+        setSize(580, 440);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
+        JPanel panel = AppTheme.createPagePanel();
 
-        JLabel titleLabel = new JLabel("Payment Step", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        JPanel headerPanel = new JPanel(new GridLayout(2, 1, 4, 4));
+        headerPanel.setOpaque(false);
+        headerPanel.add(AppTheme.createTitle("Payment"));
+        headerPanel.add(AppTheme.createSubtitle("Confirm payment details and issue your ticket."));
 
         JTextArea infoArea = new JTextArea();
         infoArea.setEditable(false);
         infoArea.setLineWrap(true);
         infoArea.setWrapStyleWord(true);
+        infoArea.setFont(new Font("Arial", Font.PLAIN, 13));
+        infoArea.setBackground(Color.WHITE);
+        infoArea.setBorder(BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(AppTheme.BORDER),
+                BorderFactory.createEmptyBorder(14, 14, 14, 14)
+        ));
 
         String flightInfo = selectedFlight;
         if (flightInfo == null || flightInfo.trim().isEmpty()) {
@@ -35,12 +42,15 @@ public class PaymentFrame extends JFrame {
         );
 
         JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        formPanel.setOpaque(false);
         JComboBox<String> paymentMethodBox = new JComboBox<>();
         paymentMethodBox.addItem("Credit Card");
         paymentMethodBox.addItem("Bank Transfer");
         paymentMethodBox.addItem("KakaoPay");
 
         JTextField cardNumberField = new JTextField();
+        AppTheme.styleComboBox(paymentMethodBox);
+        AppTheme.styleField(cardNumberField);
 
         formPanel.add(new JLabel("Payment Method:"));
         formPanel.add(paymentMethodBox);
@@ -48,16 +58,18 @@ public class PaymentFrame extends JFrame {
         formPanel.add(cardNumberField);
 
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
+        centerPanel.setOpaque(false);
         centerPanel.add(infoArea, BorderLayout.CENTER);
         centerPanel.add(formPanel, BorderLayout.SOUTH);
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        JButton backButton = new JButton("Back to Reservation");
-        JButton payButton = new JButton("Pay");
+        buttonPanel.setOpaque(false);
+        JButton backButton = AppTheme.createSecondaryButton("Back to Reservation");
+        JButton payButton = AppTheme.createPrimaryButton("Pay");
         buttonPanel.add(backButton);
         buttonPanel.add(payButton);
 
-        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(centerPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 

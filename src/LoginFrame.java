@@ -11,20 +11,24 @@ public class LoginFrame extends JFrame {
         this.onLoginSuccess = onLoginSuccess;
 
         setTitle("Login");
-        setSize(420, 260);
+        setSize(460, 310);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
+        JPanel panel = AppTheme.createPagePanel();
 
-        JLabel titleLabel = new JLabel("Login", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        JPanel headerPanel = new JPanel(new GridLayout(2, 1, 4, 4));
+        headerPanel.setOpaque(false);
+        headerPanel.add(AppTheme.createTitle("Login"));
+        headerPanel.add(AppTheme.createSubtitle("Use your email and password to continue."));
 
         JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        formPanel.setOpaque(false);
 
         JTextField emailField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
+        AppTheme.styleField(emailField);
+        AppTheme.styleField(passwordField);
 
         formPanel.add(new JLabel("Email:"));
         formPanel.add(emailField);
@@ -32,13 +36,14 @@ public class LoginFrame extends JFrame {
         formPanel.add(passwordField);
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        JButton backButton = new JButton("Back");
-        JButton loginButton = new JButton("Login");
+        buttonPanel.setOpaque(false);
+        JButton backButton = AppTheme.createSecondaryButton("Back");
+        JButton loginButton = AppTheme.createPrimaryButton("Login");
 
         buttonPanel.add(backButton);
         buttonPanel.add(loginButton);
 
-        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(formPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 

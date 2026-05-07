@@ -8,28 +8,40 @@ public class SignupFrame extends JFrame {
         this.authService = authService;
 
         setTitle("Sign Up");
-        setSize(450, 360);
+        setSize(500, 430);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
-        JPanel panel = new JPanel(new BorderLayout(10, 10));
-        panel.setBorder(BorderFactory.createEmptyBorder(25, 35, 25, 35));
+        JPanel panel = AppTheme.createPagePanel();
 
-        JLabel titleLabel = new JLabel("Sign Up", JLabel.CENTER);
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
+        JPanel headerPanel = new JPanel(new GridLayout(2, 1, 4, 4));
+        headerPanel.setOpaque(false);
+        headerPanel.add(AppTheme.createTitle("Sign Up"));
+        headerPanel.add(AppTheme.createSubtitle("Create a customer account or join as a SkyPass member."));
 
-        JPanel formPanel = new JPanel(new GridLayout(5, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(6, 2, 10, 10));
+        formPanel.setOpaque(false);
 
         JTextField nameField = new JTextField();
         JTextField emailField = new JTextField();
+        JTextField phoneField = new JTextField();
         JPasswordField passwordField = new JPasswordField();
         JPasswordField confirmPasswordField = new JPasswordField();
         JCheckBox skyPassCheckBox = new JCheckBox("Join as SkyPass Member");
+        skyPassCheckBox.setOpaque(false);
+
+        AppTheme.styleField(nameField);
+        AppTheme.styleField(emailField);
+        AppTheme.styleField(phoneField);
+        AppTheme.styleField(passwordField);
+        AppTheme.styleField(confirmPasswordField);
 
         formPanel.add(new JLabel("Name:"));
         formPanel.add(nameField);
         formPanel.add(new JLabel("Email:"));
         formPanel.add(emailField);
+        formPanel.add(new JLabel("Phone:"));
+        formPanel.add(phoneField);
         formPanel.add(new JLabel("Password:"));
         formPanel.add(passwordField);
         formPanel.add(new JLabel("Confirm Password:"));
@@ -38,13 +50,14 @@ public class SignupFrame extends JFrame {
         formPanel.add(skyPassCheckBox);
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
-        JButton backButton = new JButton("Back");
-        JButton signupButton = new JButton("Sign Up");
+        buttonPanel.setOpaque(false);
+        JButton backButton = AppTheme.createSecondaryButton("Back");
+        JButton signupButton = AppTheme.createPrimaryButton("Sign Up");
 
         buttonPanel.add(backButton);
         buttonPanel.add(signupButton);
 
-        panel.add(titleLabel, BorderLayout.NORTH);
+        panel.add(headerPanel, BorderLayout.NORTH);
         panel.add(formPanel, BorderLayout.CENTER);
         panel.add(buttonPanel, BorderLayout.SOUTH);
 
@@ -58,6 +71,7 @@ public class SignupFrame extends JFrame {
         signupButton.addActionListener(e -> {
             String name = nameField.getText();
             String email = emailField.getText();
+            String phoneNumber = phoneField.getText();
             String password = new String(passwordField.getPassword());
             String confirmPassword = new String(confirmPasswordField.getPassword());
             boolean isSkyPass = skyPassCheckBox.isSelected();
@@ -67,13 +81,13 @@ public class SignupFrame extends JFrame {
                 return;
             }
 
-            Customer user = authService.signup(name, email, password, confirmPassword, isSkyPass);
+            Customer user = authService.signup(name, email, phoneNumber, password, confirmPassword, isSkyPass);
 
             if (user == null) {
                 JOptionPane.showMessageDialog(this, "Signup failed. Please check your input.");
             } else {
                 JOptionPane.showMessageDialog(this, "Signup successful.");
-                new UserInfoFrame(authService, user);
+                new SearchFlightFrame(authService, user);
                 dispose();
             }
         });

@@ -19,7 +19,7 @@ public class ReservationFrame extends JFrame {
         JPanel headerPanel = new JPanel(new GridLayout(2, 1, 4, 4));
         headerPanel.setOpaque(false);
         headerPanel.add(AppTheme.createTitle("Reservation"));
-        headerPanel.add(AppTheme.createSubtitle("Review your selected flight before payment."));
+        headerPanel.add(AppTheme.createSubtitle("Review your selected flight before choosing a seat."));
 
         JTextArea infoArea = new JTextArea();
         infoArea.setEditable(false);
@@ -45,6 +45,7 @@ public class ReservationFrame extends JFrame {
                 "Basic reservation ready.\n\n" +
                         "Reservation ID: " + reservation.getReservationId() + "\n" +
                         "Reservation Status: " + reservation.getStatus() + "\n" +
+                        "Selected Seat: " + (reservation.hasSelectedSeat() ? reservation.getSelectedSeatNumber() : "Not selected") + "\n" +
                         "Selected Flight:\n" + flightInfo + "\n\n" +
                         "User Name: " + currentUser.getName() + "\n" +
                         "User Type: " + currentUser.getUserType() + "\n" +
@@ -54,7 +55,7 @@ public class ReservationFrame extends JFrame {
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
         buttonPanel.setOpaque(false);
         JButton backButton = AppTheme.createSecondaryButton("Back to Search");
-        JButton nextButton = AppTheme.createPrimaryButton("Next");
+        JButton nextButton = AppTheme.createPrimaryButton("Choose Seat");
         buttonPanel.add(backButton);
         buttonPanel.add(nextButton);
 
@@ -70,7 +71,7 @@ public class ReservationFrame extends JFrame {
         });
 
         nextButton.addActionListener(e -> {
-            new PaymentFrame(authService, currentUser, selectedFlight, reservation, reservationController.getReservationService());
+            new SeatSelectionFrame(authService, currentUser, selectedFlight, reservation, reservationController.getReservationService());
             dispose();
         });
 

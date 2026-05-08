@@ -37,6 +37,7 @@ public class PaymentFrame extends JFrame {
         infoArea.setText(
                 "Payment Information\n\n" +
                         "Selected Flight:\n" + flightInfo + "\n\n" +
+                        "Selected Seat: " + (reservation.hasSelectedSeat() ? reservation.getSelectedSeatNumber() : "Not selected") + "\n" +
                         "User Name: " + currentUser.getName() + "\n" +
                         "User Type: " + currentUser.getUserType() + "\n"
         );
@@ -64,7 +65,7 @@ public class PaymentFrame extends JFrame {
 
         JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
         buttonPanel.setOpaque(false);
-        JButton backButton = AppTheme.createSecondaryButton("Back to Reservation");
+        JButton backButton = AppTheme.createSecondaryButton("Back to Seat Selection");
         JButton payButton = AppTheme.createPrimaryButton("Pay");
         buttonPanel.add(backButton);
         buttonPanel.add(payButton);
@@ -76,11 +77,18 @@ public class PaymentFrame extends JFrame {
         add(panel);
 
         backButton.addActionListener(e -> {
-            new ReservationFrame(authService, currentUser, selectedFlight, reservation);
+            new SeatSelectionFrame(authService, currentUser, selectedFlight, reservation, reservationService);
             dispose();
         });
 
         payButton.addActionListener(e -> {
+            if (!reservation.hasSelectedSeat()) {
+                JOptionPane.showMessageDialog(this, "Please select a seat before payment.");
+                new SeatSelectionFrame(authService, currentUser, selectedFlight, reservation, reservationService);
+                dispose();
+                return;
+            }
+
             if (cardNumberField.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter payment information.");
                 return;
@@ -105,6 +113,7 @@ public class PaymentFrame extends JFrame {
                     "Payment completed successfully.\n" +
                             "Reservation ID: " + reservation.getReservationId() + "\n" +
                             "Reservation Status: " + reservation.getStatus() + "\n" +
+                            "Seat Number: " + reservation.getSelectedSeatNumber() + "\n" +
                             "Ticket ID: " + ticket.getTicketId() + "\n" +
                             "Issue Date: " + ticket.getIssueDate());
             new MainFrame(authService);

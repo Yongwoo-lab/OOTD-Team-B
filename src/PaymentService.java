@@ -2,7 +2,7 @@ import java.util.UUID;
 
 public class PaymentService {
     public Payment processPayment(double amount, String method, String accountNo) {
-        String paymentId = "P-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        String paymentId = createPaymentId();
 
         if (amount <= 0) {
             return new Payment(paymentId, amount, "FAILED", "Invalid payment amount.");
@@ -21,6 +21,10 @@ public class PaymentService {
         return new Payment(paymentId, amount, "SUCCESS");
     }
 
+    public Payment createFailedPayment(double amount, String failureReason) {
+        return new Payment(createPaymentId(), amount, "FAILED", failureReason);
+    }
+
     public boolean processRefund(String paymentId) {
         return paymentId != null && !paymentId.trim().isEmpty();
     }
@@ -36,5 +40,9 @@ public class PaymentService {
             return digitsOnly.length() == 10 || digitsOnly.length() == 11;
         }
         return false;
+    }
+
+    private String createPaymentId() {
+        return "P-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
     }
 }

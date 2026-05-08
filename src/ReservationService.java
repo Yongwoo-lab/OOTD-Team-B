@@ -7,6 +7,13 @@ public class ReservationService {
     }
 
     public Ticket finalizeBooking(Reservation reservation, PaymentService paymentService, String method, String accountNo) {
+        if (!reservation.hasSelectedSeat()) {
+            Payment payment = paymentService.createFailedPayment(reservation.getTotalFare(), "Seat must be selected before payment.");
+            reservation.attachPayment(payment);
+            reservation.markFailed();
+            return null;
+        }
+
         Payment payment = paymentService.processPayment(reservation.getTotalFare(), method, accountNo);
         reservation.attachPayment(payment);
 

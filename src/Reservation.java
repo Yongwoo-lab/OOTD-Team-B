@@ -1,6 +1,6 @@
 public class Reservation {
     private final String reservationId;
-    private String status;
+    private ReservationStatus status;
     private final double totalFare;
     private final Customer customer;
     private final Flight flight;
@@ -13,14 +13,14 @@ public class Reservation {
         this.customer = customer;
         this.flight = flight;
         this.totalFare = flight.getPrice();
-        this.status = "PENDING";
+        this.status = ReservationStatus.PENDING;
     }
 
     public String getReservationId() {
         return reservationId;
     }
 
-    public String getStatus() {
+    public ReservationStatus getStatus() {
         return status;
     }
 
@@ -57,7 +57,7 @@ public class Reservation {
             return;
         }
         this.selectedSeatNumber = selectedSeatNumber.trim();
-        this.status = "SEAT_SELECTED";
+        this.status = ReservationStatus.SEAT_SELECTED;
     }
 
     public void attachPayment(Payment payment) {
@@ -65,11 +65,19 @@ public class Reservation {
     }
 
     public void confirm() {
-        this.status = "CONFIRMED";
+        this.status = ReservationStatus.CONFIRMED;
     }
 
     public void markFailed() {
-        this.status = hasSelectedSeat() ? "SEAT_SELECTED" : "PENDING";
+        this.status = hasSelectedSeat() ? ReservationStatus.SEAT_SELECTED : ReservationStatus.PENDING;
+    }
+
+    public void cancel() {
+        this.status = ReservationStatus.CANCELLED;
+    }
+
+    public boolean isCancellable() {
+        return status != ReservationStatus.CANCELLED;
     }
 
     public void issueTicket(Ticket ticket) {

@@ -36,16 +36,19 @@ public class UserInfoFrame extends JFrame {
         contentPanel.add(createProfilePanel());
         contentPanel.add(createEditPanel());
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 4, 10, 10));
         buttonPanel.setOpaque(false);
 
         JButton logoutButton = AppTheme.createSecondaryButton("Logout");
         JButton saveButton = AppTheme.createPrimaryButton("Save Changes");
+        JButton historyButton = AppTheme.createSecondaryButton("Reservation History");
         JButton proceedButton = AppTheme.createPrimaryButton("Search Flights");
         saveButton.setEnabled(!(currentUser instanceof Guest));
+        historyButton.setEnabled(!(currentUser instanceof Guest));
 
         buttonPanel.add(logoutButton);
         buttonPanel.add(saveButton);
+        buttonPanel.add(historyButton);
         buttonPanel.add(proceedButton);
 
         panel.add(headerPanel, BorderLayout.NORTH);
@@ -60,6 +63,11 @@ public class UserInfoFrame extends JFrame {
         });
 
         saveButton.addActionListener(e -> saveUserInfo());
+
+        historyButton.addActionListener(e -> {
+            new ReservationHistoryFrame(authService, currentUser);
+            dispose();
+        });
 
         proceedButton.addActionListener(e -> {
             new SearchFlightFrame(authService, currentUser);

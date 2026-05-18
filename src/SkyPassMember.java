@@ -28,6 +28,12 @@ public class SkyPassMember extends Customer {
         return false;
     }
 
+    public void revokeMileage(int amount) {
+        if (amount > 0) {
+            mileage = Math.max(0, mileage - amount);
+        }
+    }
+
     @Override
     public String getUserType() {
         return "SkyPass Member";

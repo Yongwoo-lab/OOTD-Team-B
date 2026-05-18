@@ -1,7 +1,7 @@
 public class CreditCardPaymentStrategy extends AbstractPaymentStrategy {
     @Override
     public String getMethodName() {
-        return "Credit Card";
+        return "General Card";
     }
 
     @Override
@@ -11,6 +11,6 @@ public class CreditCardPaymentStrategy extends AbstractPaymentStrategy {
 
     @Override
     protected String getInvalidMessage() {
-        return "Credit card number must contain 16 digits.";
+        return "General card number must contain 16 digits.";
     }
 }

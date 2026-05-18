@@ -72,6 +72,28 @@ public class MileageService {
         }
     }
 
+    public void revokeEarnedMileage(Customer user, double paidFlightFare, AuthService authService) {
+        if (!(user instanceof SkyPassMember)) {
+            return;
+        }
+        int earnedMileage = calculateEarnedMileage(paidFlightFare);
+        if (earnedMileage <= 0) {
+            return;
+        }
+        ((SkyPassMember) user).revokeMileage(earnedMileage);
+        if (authService != null) {
+            authService.saveCustomerData();
+        }
+    }
+
+    public int calculateEarnedMileageForPayment(Reservation reservation, Payment payment) {
+        if (reservation == null || payment == null || !payment.isSuccess()) {
+            return 0;
+        }
+        double paidFlightFare = Math.max(0, reservation.getFlightFare() - payment.getDiscountAmount());
+        return calculateEarnedMileage(paidFlightFare);
+    }
+
     public int calculateEarnedMileage(double flightFare) {
         if (flightFare <= 0) {
             return 0;

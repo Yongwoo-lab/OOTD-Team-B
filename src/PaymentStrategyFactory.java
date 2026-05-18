@@ -6,9 +6,10 @@ public class PaymentStrategyFactory {
 
     public PaymentStrategyFactory() {
         strategies = new ArrayList<>();
-        strategies.add(new CreditCardPaymentStrategy());
-        strategies.add(new BankTransferPaymentStrategy());
         strategies.add(new KakaoPayPaymentStrategy());
+        strategies.add(new NaverPayPaymentStrategy());
+        strategies.add(new CreditCardPaymentStrategy());
+        strategies.add(new TossPayPaymentStrategy());
     }
 
     public PaymentStrategy createStrategy(String method) {

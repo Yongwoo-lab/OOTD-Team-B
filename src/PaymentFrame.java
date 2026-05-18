@@ -51,9 +51,10 @@ public class PaymentFrame extends JFrame {
         JPanel formPanel = new JPanel(new GridLayout(5, 2, 10, 10));
         formPanel.setOpaque(false);
         JComboBox<String> paymentMethodBox = new JComboBox<>();
-        paymentMethodBox.addItem("Credit Card");
-        paymentMethodBox.addItem("Bank Transfer");
         paymentMethodBox.addItem("KakaoPay");
+        paymentMethodBox.addItem("NaverPay");
+        paymentMethodBox.addItem("General Card");
+        paymentMethodBox.addItem("TossPay");
 
         JTextField cardNumberField = new JTextField();
         JTextField mileageField = new JTextField("0");
@@ -67,7 +68,7 @@ public class PaymentFrame extends JFrame {
 
         formPanel.add(new JLabel("Payment Method:"));
         formPanel.add(paymentMethodBox);
-        formPanel.add(new JLabel("Card / Account Number:"));
+        formPanel.add(new JLabel("Payment Number:"));
         formPanel.add(cardNumberField);
         formPanel.add(new JLabel("Available Mileage:"));
         formPanel.add(mileageBalanceLabel);
@@ -166,6 +167,7 @@ public class PaymentFrame extends JFrame {
         BusSchedule schedule = busTicket.getSchedule();
         return schedule.getDepartureCity() + " -> " + schedule.getArrivalCity()
                 + " / " + schedule.getDate() + " " + schedule.getDepartureTime()
+                + " / Seat " + busTicket.getSeatNumber()
                 + " / " + String.format("%,.0f KRW", busTicket.getFare());
     }
 

@@ -77,22 +77,11 @@ public class ReservationService {
             }
             reservation.completeRefund(refund);
             mileageService.restoreMileage(reservation.getCustomer(), payment.getMileageUsed(), authService);
+            double paidFlightFare = Math.max(0, reservation.getFlightFare() - payment.getDiscountAmount());
+            mileageService.revokeEarnedMileage(reservation.getCustomer(), paidFlightFare, authService);
         }
 
         reservation.cancel();
-        return true;
-    }
-
-    public boolean changeReservationFlight(Customer user, String reservationId, Flight newFlight) {
-        Reservation reservation = findById(reservationId);
-        if (reservation == null || newFlight == null) {
-            return false;
-        }
-        if (!authorizationService.ownsReservation(user, reservation) || !reservation.canChange()) {
-            return false;
-        }
-
-        reservation.changeFlight(newFlight);
         return true;
     }
 
@@ -105,8 +94,20 @@ public class ReservationService {
             return false;
         }
 
+        boolean wasConfirmed = reservation.getStatus() == ReservationStatus.CONFIRMED
+                || reservation.getTicket() != null
+                || (reservation.getPayment() != null && reservation.getPayment().isSuccess());
         reservation.requestChange();
-        return reservation.selectSeat(selectedSeatNumber);
+        boolean changed = reservation.selectSeat(selectedSeatNumber);
+        if (!changed) {
+            return false;
+        }
+        if (wasConfirmed) {
+            reservation.confirm();
+        } else {
+            reservation.completeChange();
+        }
+        return true;
     }
 
     public Reservation findById(String reservationId) {

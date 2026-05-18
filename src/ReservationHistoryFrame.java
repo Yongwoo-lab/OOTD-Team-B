@@ -106,6 +106,11 @@ public class ReservationHistoryFrame extends JFrame {
             return;
         }
 
+        if (!confirmAccountPassword()) {
+            JOptionPane.showMessageDialog(this, "Password verification failed. Cancellation was not processed.");
+            return;
+        }
+
         int confirm = JOptionPane.showConfirmDialog(
                 this,
                 "Cancel reservation " + selectedReservation.getReservationId() + "?",
@@ -133,8 +138,29 @@ public class ReservationHistoryFrame extends JFrame {
         if (payment != null && payment.getMileageUsed() > 0) {
             message += "\nRestored Mileage: " + payment.getMileageUsed();
         }
+        int revokedMileage = new MileageService().calculateEarnedMileageForPayment(selectedReservation, payment);
+        if (revokedMileage > 0) {
+            message += "\nRevoked Earned Mileage: " + revokedMileage;
+        }
         JOptionPane.showMessageDialog(this, message);
         refreshReservations();
+    }
+
+    private boolean confirmAccountPassword() {
+        JPasswordField passwordField = new JPasswordField();
+        AppTheme.styleField(passwordField);
+
+        JPanel panel = new JPanel(new GridLayout(1, 2, 10, 10));
+        panel.add(new JLabel("Account Password"));
+        panel.add(passwordField);
+
+        int result = JOptionPane.showConfirmDialog(this, panel, "Verify Password for Cancellation", JOptionPane.OK_CANCEL_OPTION);
+        if (result != JOptionPane.OK_OPTION) {
+            return false;
+        }
+
+        String password = new String(passwordField.getPassword());
+        return currentUser != null && currentUser.checkPassword(password);
     }
 
     private void changeSelectedReservation() {

@@ -56,6 +56,11 @@ public class BusSchedule {
 
     public BusTicket createTicket() {
         String ticketId = "B-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        return new BusTicket(ticketId, this);
+        return new BusTicket(ticketId, this, null);
+    }
+
+    public BusTicket createTicket(String seatNumber) {
+        String ticketId = "B-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return new BusTicket(ticketId, this, seatNumber);
     }
 }

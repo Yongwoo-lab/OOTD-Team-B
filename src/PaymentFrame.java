@@ -3,11 +3,13 @@ import java.awt.*;
 
 public class PaymentFrame extends JFrame {
     private final PaymentController paymentController;
+    private final MileageService mileageService = new MileageService();
+    private final AuthorizationService authorizationService = new AuthorizationService();
 
     public PaymentFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation reservation, ReservationService reservationService) {
         this.paymentController = new PaymentController(reservationService);
         setTitle("Payment");
-        setSize(580, 440);
+        setSize(680, 560);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -37,12 +39,16 @@ public class PaymentFrame extends JFrame {
         infoArea.setText(
                 "Payment Information\n\n" +
                         "Selected Flight:\n" + flightInfo + "\n\n" +
+                        "Optional Bus Ticket: " + createBusTicketText(reservation) + "\n" +
                         "Selected Seat: " + (reservation.hasSelectedSeat() ? reservation.getSelectedSeatNumber() : "Not selected") + "\n" +
                         "User Name: " + currentUser.getName() + "\n" +
-                        "User Type: " + currentUser.getUserType() + "\n"
+                        "User Type: " + currentUser.getUserType() + "\n" +
+                        "Flight Fare: " + String.format("%,.0f KRW", reservation.getFlightFare()) + "\n" +
+                        "Bus Fare: " + String.format("%,.0f KRW", reservation.getBusFare()) + "\n" +
+                        "Mileage discount applies to flight fare only."
         );
 
-        JPanel formPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        JPanel formPanel = new JPanel(new GridLayout(5, 2, 10, 10));
         formPanel.setOpaque(false);
         JComboBox<String> paymentMethodBox = new JComboBox<>();
         paymentMethodBox.addItem("Credit Card");
@@ -50,24 +56,38 @@ public class PaymentFrame extends JFrame {
         paymentMethodBox.addItem("KakaoPay");
 
         JTextField cardNumberField = new JTextField();
+        JTextField mileageField = new JTextField("0");
+        JLabel mileageBalanceLabel = new JLabel(mileageService.getMileageMessage(currentUser));
+        JLabel finalAmountLabel = new JLabel();
         AppTheme.styleComboBox(paymentMethodBox);
         AppTheme.styleField(cardNumberField);
+        AppTheme.styleField(mileageField);
+        mileageField.setEnabled(authorizationService.canUseMileage(currentUser));
+        refreshFinalAmountLabel(reservation, mileageField, finalAmountLabel);
 
         formPanel.add(new JLabel("Payment Method:"));
         formPanel.add(paymentMethodBox);
         formPanel.add(new JLabel("Card / Account Number:"));
         formPanel.add(cardNumberField);
+        formPanel.add(new JLabel("Available Mileage:"));
+        formPanel.add(mileageBalanceLabel);
+        formPanel.add(new JLabel("Use Mileage:"));
+        formPanel.add(mileageField);
+        formPanel.add(new JLabel("Final Payment Amount:"));
+        formPanel.add(finalAmountLabel);
 
         JPanel centerPanel = new JPanel(new BorderLayout(10, 10));
         centerPanel.setOpaque(false);
         centerPanel.add(infoArea, BorderLayout.CENTER);
         centerPanel.add(formPanel, BorderLayout.SOUTH);
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         buttonPanel.setOpaque(false);
         JButton backButton = AppTheme.createSecondaryButton("Back to Seat Selection");
+        JButton applyMileageButton = AppTheme.createSecondaryButton("Apply Mileage");
         JButton payButton = AppTheme.createPrimaryButton("Pay");
         buttonPanel.add(backButton);
+        buttonPanel.add(applyMileageButton);
         buttonPanel.add(payButton);
 
         panel.add(headerPanel, BorderLayout.NORTH);
@@ -81,6 +101,8 @@ public class PaymentFrame extends JFrame {
             dispose();
         });
 
+        applyMileageButton.addActionListener(e -> refreshFinalAmountLabel(reservation, mileageField, finalAmountLabel));
+
         payButton.addActionListener(e -> {
             if (!reservation.hasSelectedSeat()) {
                 JOptionPane.showMessageDialog(this, "Please select a seat before payment.");
@@ -89,14 +111,21 @@ public class PaymentFrame extends JFrame {
                 return;
             }
 
-            if (cardNumberField.getText().trim().isEmpty()) {
+            int mileageToUse = parseMileage(mileageField.getText());
+            if (!mileageService.canUseMileage(currentUser, mileageToUse, reservation.getFlightFare())) {
+                JOptionPane.showMessageDialog(this, "Mileage amount is invalid. It cannot exceed your balance or the flight fare.");
+                return;
+            }
+
+            double finalAmount = mileageService.calculateFinalAmount(reservation, mileageToUse);
+            if (finalAmount > 0 && cardNumberField.getText().trim().isEmpty()) {
                 JOptionPane.showMessageDialog(this, "Please enter payment information.");
                 return;
             }
 
             String selectedMethod = (String) paymentMethodBox.getSelectedItem();
             String paymentInfo = cardNumberField.getText().trim();
-            Ticket ticket = paymentController.processPayment(reservation, selectedMethod, paymentInfo);
+            Ticket ticket = paymentController.processPayment(reservation, selectedMethod, paymentInfo, mileageToUse, authService);
             if (ticket == null) {
                 Payment failedPayment = paymentController.getLastPayment(reservation);
                 String reason = failedPayment != null && failedPayment.getFailureReason() != null
@@ -109,17 +138,53 @@ public class PaymentFrame extends JFrame {
                 return;
             }
 
+            Payment payment = paymentController.getLastPayment(reservation);
             JOptionPane.showMessageDialog(this,
                     "Payment completed successfully.\n" +
                             "Reservation ID: " + reservation.getReservationId() + "\n" +
                             "Reservation Status: " + reservation.getStatus() + "\n" +
                             "Seat Number: " + reservation.getSelectedSeatNumber() + "\n" +
+                            "Flight Fare: " + String.format("%,.0f KRW", reservation.getFlightFare()) + "\n" +
+                            "Bus Fare: " + String.format("%,.0f KRW", reservation.getBusFare()) + "\n" +
+                            "Mileage Used: " + (payment == null ? 0 : payment.getMileageUsed()) + "\n" +
+                            "Paid Amount: " + String.format("%,.0f KRW", payment == null ? finalAmount : payment.getAmount()) + "\n" +
                             "Ticket ID: " + ticket.getTicketId() + "\n" +
-                            "Issue Date: " + ticket.getIssueDate());
-            new MainFrame(authService);
+                            "Issue Date: " + ticket.getIssueDate() + "\n" +
+                            "Notification: " + reservation.getLastNotificationMessage());
+            new ReservationHistoryFrame(authService, currentUser);
             dispose();
         });
 
         setVisible(true);
+    }
+
+    private String createBusTicketText(Reservation reservation) {
+        if (reservation == null || !reservation.hasBusTicket()) {
+            return "Not selected";
+        }
+        BusTicket busTicket = reservation.getBusTicket();
+        BusSchedule schedule = busTicket.getSchedule();
+        return schedule.getDepartureCity() + " -> " + schedule.getArrivalCity()
+                + " / " + schedule.getDate() + " " + schedule.getDepartureTime()
+                + " / " + String.format("%,.0f KRW", busTicket.getFare());
+    }
+
+    private void refreshFinalAmountLabel(Reservation reservation, JTextField mileageField, JLabel finalAmountLabel) {
+        int mileageToUse = parseMileage(mileageField.getText());
+        double finalAmount = mileageService.calculateFinalAmount(reservation, mileageToUse);
+        finalAmountLabel.setText(String.format("%,.0f KRW", finalAmount));
+        finalAmountLabel.setForeground(AppTheme.BLUE);
+        finalAmountLabel.setFont(new Font("Arial", Font.BOLD, 13));
+    }
+
+    private int parseMileage(String text) {
+        try {
+            if (text == null || text.trim().isEmpty()) {
+                return 0;
+            }
+            return Math.max(0, Integer.parseInt(text.trim().replace(",", "")));
+        } catch (NumberFormatException e) {
+            return -1;
+        }
     }
 }

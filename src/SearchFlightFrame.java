@@ -9,6 +9,7 @@ public class SearchFlightFrame extends JFrame {
     private AuthService authService;
     private Customer currentUser;
     private MileageService mileageService = new MileageService();
+    private AuthorizationService authorizationService = new AuthorizationService();
     private List<Flight> flights;
 
     public SearchFlightFrame(AuthService authService, Customer currentUser) {
@@ -184,7 +185,7 @@ public class SearchFlightFrame extends JFrame {
                 return;
             }
 
-            if (currentUser == null || currentUser instanceof Guest) {
+            if (!authorizationService.canBookFlight(currentUser)) {
                 JOptionPane.showMessageDialog(this, "Please login before booking.");
                 new MainFrame(authService);
                 dispose();

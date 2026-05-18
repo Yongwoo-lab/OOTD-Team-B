@@ -41,22 +41,40 @@ public class ReservationFrame extends JFrame {
                 ? existingReservation
                 : reservationController.bookFlight(currentUser, selectedFlight);
 
+        if (reservation == null) {
+            JOptionPane.showMessageDialog(this, "Reservation requires member login.");
+            new MainFrame(authService);
+            dispose();
+            return;
+        }
+
+        String busTicketText = "Not selected";
+        if (reservation.hasBusTicket()) {
+            BusTicket busTicket = reservation.getBusTicket();
+            busTicketText = busTicket.getRouteText() + " / " + String.format("%,.0f KRW", busTicket.getFare());
+        }
+
         infoArea.setText(
                 "Basic reservation ready.\n\n" +
                         "Reservation ID: " + reservation.getReservationId() + "\n" +
                         "Reservation Status: " + reservation.getStatus() + "\n" +
                         "Selected Seat: " + (reservation.hasSelectedSeat() ? reservation.getSelectedSeatNumber() : "Not selected") + "\n" +
                         "Selected Flight:\n" + flightInfo + "\n\n" +
+                        "Optional Bus Ticket: " + busTicketText + "\n" +
                         "User Name: " + currentUser.getName() + "\n" +
                         "User Type: " + currentUser.getUserType() + "\n" +
-                        "Total Fare: " + String.format("%,.0f KRW", reservation.getTotalFare()) + "\n"
+                        "Flight Fare: " + String.format("%,.0f KRW", reservation.getFlightFare()) + "\n" +
+                        "Bus Fare: " + String.format("%,.0f KRW", reservation.getBusFare()) + "\n" +
+                        "Total Before Mileage: " + String.format("%,.0f KRW", reservation.getTotalFare()) + "\n"
         );
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 2, 10, 10));
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
         buttonPanel.setOpaque(false);
         JButton backButton = AppTheme.createSecondaryButton("Back to Search");
+        JButton busButton = AppTheme.createSecondaryButton(reservation.hasBusTicket() ? "Change Bus Ticket" : "Add Bus Ticket");
         JButton nextButton = AppTheme.createPrimaryButton("Choose Seat");
         buttonPanel.add(backButton);
+        buttonPanel.add(busButton);
         buttonPanel.add(nextButton);
 
         panel.add(headerPanel, BorderLayout.NORTH);
@@ -67,6 +85,11 @@ public class ReservationFrame extends JFrame {
 
         backButton.addActionListener(e -> {
             new SearchFlightFrame(authService, currentUser);
+            dispose();
+        });
+
+        busButton.addActionListener(e -> {
+            new BusTicketFrame(authService, currentUser, selectedFlight, reservation, reservationController.getReservationService());
             dispose();
         });
 

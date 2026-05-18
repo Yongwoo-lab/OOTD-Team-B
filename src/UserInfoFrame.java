@@ -41,7 +41,7 @@ public class UserInfoFrame extends JFrame {
 
         JButton logoutButton = AppTheme.createSecondaryButton("Logout");
         JButton saveButton = AppTheme.createPrimaryButton("Save Changes");
-        JButton historyButton = AppTheme.createSecondaryButton("Reservation History");
+        JButton historyButton = AppTheme.createSecondaryButton("Reserved Tickets");
         JButton proceedButton = AppTheme.createPrimaryButton("Search Flights");
         saveButton.setEnabled(!(currentUser instanceof Guest));
         historyButton.setEnabled(!(currentUser instanceof Guest));

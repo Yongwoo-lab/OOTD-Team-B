@@ -159,26 +159,39 @@ public class MainFrame extends JFrame {
     private void showFindPasswordDialog() {
         JTextField emailField = new JTextField();
         JTextField phoneField = new JTextField();
+        JPasswordField newPasswordField = new JPasswordField();
+        JPasswordField confirmPasswordField = new JPasswordField();
         AppTheme.styleField(emailField);
         AppTheme.styleField(phoneField);
+        AppTheme.styleField(newPasswordField);
+        AppTheme.styleField(confirmPasswordField);
 
-        JPanel panel = new JPanel(new GridLayout(2, 2, 10, 10));
+        JPanel panel = new JPanel(new GridLayout(4, 2, 10, 10));
         panel.add(new JLabel("Email"));
         panel.add(emailField);
         panel.add(new JLabel("Phone"));
         panel.add(phoneField);
+        panel.add(new JLabel("New Password"));
+        panel.add(newPasswordField);
+        panel.add(new JLabel("Confirm Password"));
+        panel.add(confirmPasswordField);
 
-        int result = JOptionPane.showConfirmDialog(this, panel, "Find Password", JOptionPane.OK_CANCEL_OPTION);
+        int result = JOptionPane.showConfirmDialog(this, panel, "Reset Password", JOptionPane.OK_CANCEL_OPTION);
         if (result != JOptionPane.OK_OPTION) {
             return;
         }
 
-        Customer customer = authService.findCustomerByEmailAndPhone(emailField.getText(), phoneField.getText());
-        if (customer == null) {
-            JOptionPane.showMessageDialog(this, "No matching account found.");
+        boolean reset = authService.resetPassword(
+                emailField.getText(),
+                phoneField.getText(),
+                new String(newPasswordField.getPassword()),
+                new String(confirmPasswordField.getPassword())
+        );
+        if (!reset) {
+            JOptionPane.showMessageDialog(this, "Password reset failed. Check your account information or password confirmation.");
             return;
         }
 
-        JOptionPane.showMessageDialog(this, "Your password is:\n" + customer.getPassword());
+        JOptionPane.showMessageDialog(this, "Your password has been reset.");
     }
 }

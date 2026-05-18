@@ -11,6 +11,10 @@ public class PaymentController {
         return reservationService.finalizeBooking(reservation, paymentService, method, accountNo);
     }
 
+    public Ticket processPayment(Reservation reservation, String method, String accountNo, int mileageToUse, AuthService authService) {
+        return reservationService.finalizeBooking(reservation, paymentService, method, accountNo, mileageToUse, authService);
+    }
+
     public Payment getLastPayment(Reservation reservation) {
         return reservation.getPayment();
     }

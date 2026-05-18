@@ -20,8 +20,8 @@ public class ReservationHistoryFrame extends JFrame {
         this.listModel = new DefaultListModel<>();
         this.reservationList = new JList<>(listModel);
 
-        setTitle("Reservation History");
-        setSize(740, 520);
+        setTitle("Reserved Tickets");
+        setSize(920, 540);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
         setLocationRelativeTo(null);
 
@@ -29,22 +29,24 @@ public class ReservationHistoryFrame extends JFrame {
 
         JPanel headerPanel = new JPanel(new GridLayout(2, 1, 4, 4));
         headerPanel.setOpaque(false);
-        headerPanel.add(AppTheme.createTitle("Reservation History"));
-        headerPanel.add(AppTheme.createSubtitle("Check your reservation status and cancel when needed."));
+        headerPanel.add(AppTheme.createTitle("Reserved Tickets"));
+        headerPanel.add(AppTheme.createSubtitle("Check issued tickets, reservation status, changes, and refunds."));
 
         reservationList.setFont(new Font("Monospaced", Font.PLAIN, 12));
         reservationList.setSelectionMode(ListSelectionModel.SINGLE_SELECTION);
         JScrollPane scrollPane = new JScrollPane(reservationList);
         scrollPane.setBorder(BorderFactory.createLineBorder(AppTheme.BORDER));
 
-        JPanel buttonPanel = new JPanel(new GridLayout(1, 3, 10, 10));
+        JPanel buttonPanel = new JPanel(new GridLayout(1, 4, 10, 10));
         buttonPanel.setOpaque(false);
 
         JButton refreshButton = AppTheme.createSecondaryButton("Refresh");
+        JButton changeButton = AppTheme.createSecondaryButton("Change Reservation");
         JButton cancelButton = AppTheme.createPrimaryButton("Cancel Reservation");
         JButton backButton = AppTheme.createSecondaryButton("Back to My Page");
 
         buttonPanel.add(refreshButton);
+        buttonPanel.add(changeButton);
         buttonPanel.add(cancelButton);
         buttonPanel.add(backButton);
 
@@ -56,6 +58,8 @@ public class ReservationHistoryFrame extends JFrame {
         refreshReservations();
 
         refreshButton.addActionListener(e -> refreshReservations());
+
+        changeButton.addActionListener(e -> changeSelectedReservation());
 
         cancelButton.addActionListener(e -> cancelSelectedReservation());
 
@@ -112,26 +116,63 @@ public class ReservationHistoryFrame extends JFrame {
             return;
         }
 
-        boolean cancelled = reservationService.cancelReservation(selectedReservation.getReservationId(), paymentService);
+        boolean cancelled = reservationService.cancelReservation(currentUser, selectedReservation.getReservationId(), paymentService, authService);
         if (!cancelled) {
             JOptionPane.showMessageDialog(this, "Cancellation failed. Please try again.");
             return;
         }
 
-        JOptionPane.showMessageDialog(this, "Reservation cancelled successfully.");
+        String message = "Reservation cancelled successfully.";
+        Refund refund = selectedReservation.getRefund();
+        if (refund != null) {
+            message += "\nRefund ID: " + refund.getRefundId()
+                    + "\nRefund Amount: " + String.format("%,.0f KRW", refund.getAmount())
+                    + "\nRefund Status: " + refund.getStatus();
+        }
+        Payment payment = selectedReservation.getPayment();
+        if (payment != null && payment.getMileageUsed() > 0) {
+            message += "\nRestored Mileage: " + payment.getMileageUsed();
+        }
+        JOptionPane.showMessageDialog(this, message);
         refreshReservations();
+    }
+
+    private void changeSelectedReservation() {
+        int selectedIndex = reservationList.getSelectedIndex();
+        if (selectedIndex < 0 || selectedIndex >= reservations.size()) {
+            JOptionPane.showMessageDialog(this, "Please select a reservation to change.");
+            return;
+        }
+
+        Reservation selectedReservation = reservations.get(selectedIndex);
+        if (!selectedReservation.canChange()) {
+            JOptionPane.showMessageDialog(this, "This reservation cannot be changed.");
+            return;
+        }
+
+        new ReservationChangeFrame(authService, currentUser, selectedReservation, reservationService);
+        dispose();
     }
 
     private String formatReservation(Reservation reservation) {
         Flight flight = reservation.getFlight();
         String route = flight.getDeparture() + " -> " + flight.getArrival();
         String seat = reservation.hasSelectedSeat() ? reservation.getSelectedSeatNumber() : "-";
+        String bus = reservation.hasBusTicket() ? " | Bus " + reservation.getBusTicket().getRouteText() : "";
+        String ticket = reservation.getTicket() == null ? "Ticket -" : "Ticket " + reservation.getTicket().getTicketId();
+        String busTicket = "";
+        if (reservation.hasBusTicket()) {
+            busTicket = " | BusTicket " + reservation.getBusTicket().getTicketId();
+        }
 
-        return String.format("%s | %s | %s | Seat %s | %,.0f KRW",
+        return String.format("%s | %s | %s | %s | Seat %s%s%s | %,.0f KRW",
                 reservation.getReservationId(),
                 reservation.getStatus(),
+                ticket,
                 route,
                 seat,
+                bus,
+                busTicket,
                 reservation.getTotalFare());
     }
 }

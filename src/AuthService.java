@@ -88,6 +88,21 @@ public class AuthService {
         return null;
     }
 
+    public boolean resetPassword(String email, String phoneNumber, String password, String confirmPassword) {
+        if (password == null || confirmPassword == null || password.isEmpty() || !password.equals(confirmPassword)) {
+            return false;
+        }
+
+        Customer customer = findCustomerByEmailAndPhone(email, phoneNumber);
+        if (customer == null) {
+            return false;
+        }
+
+        customer.updatePassword(password);
+        saveCustomerData();
+        return true;
+    }
+
     public boolean isEmailDuplicated(String email) {
         for (Customer customer : customers) {
             if (customer.getEmail().equalsIgnoreCase(email.trim())) {

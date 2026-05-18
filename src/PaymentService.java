@@ -1,48 +1,30 @@
-import java.util.UUID;
-
 public class PaymentService {
+    private final PaymentStrategyFactory strategyFactory = new PaymentStrategyFactory();
+
     public Payment processPayment(double amount, String method, String accountNo) {
-        String paymentId = createPaymentId();
-
-        if (amount <= 0) {
-            return new Payment(paymentId, amount, "FAILED", "Invalid payment amount.");
+        PaymentStrategy strategy = strategyFactory.createStrategy(method);
+        if (strategy == null) {
+            return createFailedPayment(amount, "Unsupported payment method.");
         }
-
-        String digitsOnly = accountNo == null ? "" : accountNo.replaceAll("\\D", "");
-        if (!isValidPaymentInfo(method, digitsOnly)) {
-            return new Payment(paymentId, amount, "FAILED", "Invalid account/card format for selected method.");
-        }
-
-        // Deterministic demo failure rule: account ending with 0 is rejected.
-        if (digitsOnly.endsWith("0")) {
-            return new Payment(paymentId, amount, "FAILED", "Payment declined by issuer.");
-        }
-
-        return new Payment(paymentId, amount, "SUCCESS");
+        return strategy.pay(amount, accountNo);
     }
 
     public Payment createFailedPayment(double amount, String failureReason) {
-        return new Payment(createPaymentId(), amount, "FAILED", failureReason);
+        String paymentId = "P-" + java.util.UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return new Payment(paymentId, amount, "FAILED", failureReason);
     }
 
     public boolean processRefund(String paymentId) {
         return paymentId != null && !paymentId.trim().isEmpty();
     }
 
-    private boolean isValidPaymentInfo(String method, String digitsOnly) {
-        if ("Credit Card".equals(method)) {
-            return digitsOnly.length() == 16;
+    public Refund processRefund(Payment payment) {
+        if (payment == null || !payment.isSuccess()) {
+            return new Refund(null, 0, RefundStatus.FAILED, "Only successful payments can be refunded.");
         }
-        if ("Bank Transfer".equals(method)) {
-            return digitsOnly.length() >= 10 && digitsOnly.length() <= 14;
+        if (payment.getAmount() < 0) {
+            return new Refund(payment.getPaymentId(), payment.getAmount(), RefundStatus.FAILED, "Invalid refund amount.");
         }
-        if ("KakaoPay".equals(method)) {
-            return digitsOnly.length() == 10 || digitsOnly.length() == 11;
-        }
-        return false;
-    }
-
-    private String createPaymentId() {
-        return "P-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
+        return new Refund(payment.getPaymentId(), payment.getAmount(), RefundStatus.COMPLETED, "Refund completed.");
     }
 }

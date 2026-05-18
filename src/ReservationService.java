@@ -5,8 +5,22 @@ import java.util.List;
 
 public class ReservationService {
     private static final List<Reservation> RESERVATION_STORE = new ArrayList<>();
+    private final AuthorizationService authorizationService = new AuthorizationService();
+    private final MileageService mileageService = new MileageService();
+    private final ReservationNotifier reservationNotifier;
+    private final AbstractBookingTemplate bookingTemplate;
+
+    public ReservationService() {
+        this.reservationNotifier = new ReservationNotifier();
+        this.reservationNotifier.addObserver(new ReservationMessageObserver());
+        this.reservationNotifier.addObserver(new MileageAccrualObserver(mileageService));
+        this.bookingTemplate = new FlightBookingTemplate(mileageService);
+    }
 
     public Reservation bookFlight(Customer customer, Flight flight) {
+        if (!authorizationService.canBookFlight(customer)) {
+            return null;
+        }
         String reservationId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Reservation reservation = new Reservation(reservationId, customer, flight);
         RESERVATION_STORE.add(reservation);
@@ -14,30 +28,13 @@ public class ReservationService {
     }
 
     public Ticket finalizeBooking(Reservation reservation, PaymentService paymentService, String method, String accountNo) {
-        if (!reservation.hasSelectedSeat()) {
-            Payment payment = paymentService.createFailedPayment(reservation.getTotalFare(), "Seat must be selected before payment.");
-            reservation.attachPayment(payment);
-            reservation.markFailed();
-            return null;
-        }
-
-        Payment payment = paymentService.processPayment(reservation.getTotalFare(), method, accountNo);
-        reservation.attachPayment(payment);
-
-        if (!payment.isSuccess()) {
-            reservation.markFailed();
-            return null;
-        }
-
-        reservation.confirm();
-        Ticket ticket = issueTicket();
-        reservation.issueTicket(ticket);
-        return ticket;
+        return finalizeBooking(reservation, paymentService, method, accountNo, 0, null);
     }
 
-    private Ticket issueTicket() {
-        String ticketId = "T-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
-        return new Ticket(ticketId, "ISSUED");
+    public Ticket finalizeBooking(Reservation reservation, PaymentService paymentService,
+                                  String method, String accountNo, int mileageToUse, AuthService authService) {
+        BookingPaymentRequest request = new BookingPaymentRequest(method, accountNo, mileageToUse, authService);
+        return bookingTemplate.finalizeBooking(reservation, paymentService, request, reservationNotifier);
     }
 
     public List<Reservation> getReservationsByCustomer(Customer customer) {
@@ -57,18 +54,59 @@ public class ReservationService {
     }
 
     public boolean cancelReservation(String reservationId, PaymentService paymentService) {
+        return cancelReservation(null, reservationId, paymentService, null);
+    }
+
+    public boolean cancelReservation(Customer user, String reservationId, PaymentService paymentService, AuthService authService) {
         Reservation reservation = findById(reservationId);
         if (reservation == null || !reservation.isCancellable()) {
+            return false;
+        }
+        if (user != null && !authorizationService.ownsReservation(user, reservation)) {
             return false;
         }
 
         Payment payment = reservation.getPayment();
         if (payment != null && payment.isSuccess() && paymentService != null) {
-            paymentService.processRefund(payment.getPaymentId());
+            if (reservation.canRefund()) {
+                reservation.requestRefund();
+            }
+            Refund refund = paymentService.processRefund(payment);
+            if (!refund.isCompleted()) {
+                return false;
+            }
+            reservation.completeRefund(refund);
+            mileageService.restoreMileage(reservation.getCustomer(), payment.getMileageUsed(), authService);
         }
 
         reservation.cancel();
         return true;
+    }
+
+    public boolean changeReservationFlight(Customer user, String reservationId, Flight newFlight) {
+        Reservation reservation = findById(reservationId);
+        if (reservation == null || newFlight == null) {
+            return false;
+        }
+        if (!authorizationService.ownsReservation(user, reservation) || !reservation.canChange()) {
+            return false;
+        }
+
+        reservation.changeFlight(newFlight);
+        return true;
+    }
+
+    public boolean changeReservationSeat(Customer user, String reservationId, String selectedSeatNumber) {
+        Reservation reservation = findById(reservationId);
+        if (reservation == null) {
+            return false;
+        }
+        if (!authorizationService.ownsReservation(user, reservation) || !reservation.canChange()) {
+            return false;
+        }
+
+        reservation.requestChange();
+        return reservation.selectSeat(selectedSeatNumber);
     }
 
     public Reservation findById(String reservationId) {

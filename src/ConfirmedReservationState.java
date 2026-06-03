@@ -5,35 +5,26 @@ public class ConfirmedReservationState extends AbstractReservationState {
     }
 
     @Override
-    public boolean requestChange(Reservation reservation) {
-        reservation.setState(new ChangeRequestedReservationState());
-        return true;
+    public boolean handle(Reservation reservation, ReservationAction action, Object payload) {
+        if (action == ReservationAction.REQUEST_CHANGE) {
+            reservation.setState(new ChangeRequestedReservationState());
+            return true;
+        }
+        if (action == ReservationAction.REQUEST_REFUND) {
+            reservation.setState(new RefundRequestedReservationState());
+            return true;
+        }
+        if (action == ReservationAction.CANCEL) {
+            reservation.setState(new CancelledReservationState());
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean requestRefund(Reservation reservation) {
-        reservation.setState(new RefundRequestedReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean cancel(Reservation reservation) {
-        reservation.setState(new CancelledReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean canCancel() {
-        return true;
-    }
-
-    @Override
-    public boolean canChange() {
-        return true;
-    }
-
-    @Override
-    public boolean canRefund() {
-        return true;
+    public boolean canHandle(ReservationAction action) {
+        return action == ReservationAction.CANCEL
+                || action == ReservationAction.REQUEST_CHANGE
+                || action == ReservationAction.REQUEST_REFUND;
     }
 }

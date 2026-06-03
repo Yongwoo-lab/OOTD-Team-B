@@ -1,4 +1,3 @@
-import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
@@ -29,16 +28,6 @@ public class SeatService {
             }
         }
         return null;
-    }
-
-    public List<Seat> getSeatsByRow(int row) {
-        List<Seat> rowSeats = new ArrayList<>();
-        for (Seat seat : seats) {
-            if (seat.getRow() == row) {
-                rowSeats.add(seat);
-            }
-        }
-        return rowSeats;
     }
 
     public boolean selectSeat(String seatNumber) {

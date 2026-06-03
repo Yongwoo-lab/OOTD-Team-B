@@ -4,7 +4,7 @@ import java.util.Collections;
 import java.util.List;
 
 public class ReservationService {
-    private static final List<Reservation> RESERVATION_STORE = new ArrayList<>();
+    private final ReservationRepository reservationRepository = ReservationRepository.getInstance();
     private final AuthorizationService authorizationService = new AuthorizationService();
     private final MileageService mileageService = new MileageService();
     private final ReservationNotifier reservationNotifier;
@@ -23,7 +23,7 @@ public class ReservationService {
         }
         String reservationId = "R-" + UUID.randomUUID().toString().substring(0, 8).toUpperCase();
         Reservation reservation = new Reservation(reservationId, customer, flight);
-        RESERVATION_STORE.add(reservation);
+        reservationRepository.save(reservation);
         return reservation;
     }
 
@@ -43,10 +43,8 @@ public class ReservationService {
         }
 
         List<Reservation> reservations = new ArrayList<>();
-        for (Reservation reservation : RESERVATION_STORE) {
-            if (reservation.getCustomer() != null
-                    && customer.getCustomerId().equals(reservation.getCustomer().getCustomerId())
-                    && reservation.getStatus() != ReservationStatus.CANCELLED) {
+        for (Reservation reservation : reservationRepository.findByCustomer(customer)) {
+            if (reservation.getStatus() != ReservationStatus.CANCELLED) {
                 reservations.add(reservation);
             }
         }
@@ -115,11 +113,6 @@ public class ReservationService {
             return null;
         }
 
-        for (Reservation reservation : RESERVATION_STORE) {
-            if (reservationId.equals(reservation.getReservationId())) {
-                return reservation;
-            }
-        }
-        return null;
+        return reservationRepository.findById(reservationId);
     }
 }

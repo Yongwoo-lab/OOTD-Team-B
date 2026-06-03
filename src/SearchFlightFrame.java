@@ -1,6 +1,8 @@
 import javax.swing.*;
 import java.awt.*;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 public class SearchFlightFrame extends JFrame {
     private static final String FLIGHT_PLACEHOLDER = "-- Select destination or date first --";
@@ -11,6 +13,7 @@ public class SearchFlightFrame extends JFrame {
     private MileageService mileageService = new MileageService();
     private AuthorizationService authorizationService = new AuthorizationService();
     private List<Flight> flights;
+    private Map<String, Flight> flightOptions = new HashMap<>();
 
     public SearchFlightFrame(AuthService authService, Customer currentUser) {
         this.authService = authService;
@@ -184,6 +187,11 @@ public class SearchFlightFrame extends JFrame {
                 JOptionPane.showMessageDialog(this, "Please search and select a flight first.");
                 return;
             }
+            Flight flight = getSelectedFlight(selectedFlight);
+            if (flight == null) {
+                JOptionPane.showMessageDialog(this, "Selected flight data could not be found. Please search again.");
+                return;
+            }
 
             if (!authorizationService.canBookFlight(currentUser)) {
                 JOptionPane.showMessageDialog(this, "Please login before booking.");
@@ -192,7 +200,7 @@ public class SearchFlightFrame extends JFrame {
                 return;
             }
 
-            new ReservationFrame(authService, currentUser, selectedFlight);
+            new ReservationFrame(authService, currentUser, flight);
             dispose();
         });
 
@@ -254,11 +262,14 @@ public class SearchFlightFrame extends JFrame {
 
     private void populateFlights(JComboBox<String> flightBox, String destination, String date) {
         flightBox.removeAllItems();
+        flightOptions.clear();
         for (Flight flight : flights) {
             boolean matchDestination = (destination == null) || flight.getArrival().equals(destination);
             boolean matchDate = (date == null) || flight.getDate().equals(date);
             if (matchDestination && matchDate) {
-                flightBox.addItem(formatFlight(flight));
+                String flightText = formatFlight(flight);
+                flightOptions.put(flightText, flight);
+                flightBox.addItem(flightText);
             }
         }
 
@@ -269,6 +280,7 @@ public class SearchFlightFrame extends JFrame {
 
     private void showFlightPlaceholder(JComboBox<String> flightBox) {
         flightBox.removeAllItems();
+        flightOptions.clear();
         flightBox.addItem(FLIGHT_PLACEHOLDER);
     }
 
@@ -320,5 +332,9 @@ public class SearchFlightFrame extends JFrame {
         return selectedFlight != null
                 && !FLIGHT_PLACEHOLDER.equals(selectedFlight)
                 && !NO_MATCHING_FLIGHTS.equals(selectedFlight);
+    }
+
+    private Flight getSelectedFlight(String selectedFlight) {
+        return flightOptions.get(selectedFlight);
     }
 }

@@ -5,38 +5,35 @@ public class ChangeRequestedReservationState extends AbstractReservationState {
     }
 
     @Override
-    public boolean selectSeat(Reservation reservation, String selectedSeatNumber) {
-        if (!hasText(selectedSeatNumber)) {
-            return false;
-        }
-        reservation.setSelectedSeatNumber(selectedSeatNumber.trim());
-        reservation.setState(new SeatSelectedReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean completeChange(Reservation reservation) {
-        if (reservation.hasSelectedSeat()) {
+    public boolean handle(Reservation reservation, ReservationAction action, Object payload) {
+        if (action == ReservationAction.SELECT_SEAT) {
+            String selectedSeatNumber = getTextPayload(payload);
+            if (!hasText(selectedSeatNumber)) {
+                return false;
+            }
+            reservation.setSelectedSeatNumber(selectedSeatNumber);
             reservation.setState(new SeatSelectedReservationState());
-        } else {
-            reservation.setState(new PendingReservationState());
+            return true;
         }
-        return true;
+        if (action == ReservationAction.COMPLETE_CHANGE) {
+            if (reservation.hasSelectedSeat()) {
+                reservation.setState(new SeatSelectedReservationState());
+            } else {
+                reservation.setState(new PendingReservationState());
+            }
+            return true;
+        }
+        if (action == ReservationAction.CANCEL) {
+            reservation.setState(new CancelledReservationState());
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean cancel(Reservation reservation) {
-        reservation.setState(new CancelledReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean canCancel() {
-        return true;
-    }
-
-    @Override
-    public boolean canChange() {
-        return true;
+    public boolean canHandle(ReservationAction action) {
+        return action == ReservationAction.CANCEL
+                || action == ReservationAction.SELECT_SEAT
+                || action == ReservationAction.COMPLETE_CHANGE;
     }
 }

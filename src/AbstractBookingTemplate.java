@@ -3,6 +3,20 @@ import java.util.UUID;
 public abstract class AbstractBookingTemplate {
     public final Ticket finalizeBooking(Reservation reservation, PaymentService paymentService,
                                         BookingPaymentRequest request, ReservationNotifier notifier) {
+        if (reservation == null) {
+            return null;
+        }
+        if (paymentService == null) {
+            reservation.markFailed();
+            return null;
+        }
+        if (request == null) {
+            Payment payment = paymentService.createFailedPayment(getSafeAmount(reservation), "Payment request does not exist.");
+            reservation.attachPayment(payment);
+            reservation.markFailed();
+            return null;
+        }
+
         String validationError = validateBeforePayment(reservation, request);
         if (validationError != null) {
             Payment payment = paymentService.createFailedPayment(getSafeAmount(reservation), validationError);
@@ -16,8 +30,15 @@ public abstract class AbstractBookingTemplate {
         double discountAmount = Math.max(0, originalAmount - finalAmount);
         request.setAmountSummary(originalAmount, finalAmount, discountAmount);
 
-        Payment payment = paymentService.processPayment(finalAmount, request.getMethod(), request.getPaymentInfo())
-                .withMileageDiscount(originalAmount, request.getMileageToUse(), discountAmount);
+        Payment payment = paymentService.processPayment(finalAmount, request.getMethod(), request.getPaymentInfo());
+        if (payment == null) {
+            Payment failedPayment = paymentService.createFailedPayment(finalAmount, "Payment could not be processed.");
+            reservation.attachPayment(failedPayment);
+            reservation.markFailed();
+            return null;
+        }
+
+        payment = payment.withDiscountSummary(originalAmount, request.getMileageToUse(), discountAmount);
         reservation.attachPayment(payment);
 
         if (!payment.isSuccess()) {

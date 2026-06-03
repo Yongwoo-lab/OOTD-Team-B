@@ -5,7 +5,7 @@ import java.util.List;
 public class BusTicketFrame extends JFrame {
     private final AuthService authService;
     private final Customer currentUser;
-    private final String selectedFlight;
+    private final Flight selectedFlight;
     private final Reservation reservation;
     private final ReservationService reservationService;
     private final List<BusSchedule> schedules;
@@ -13,7 +13,7 @@ public class BusTicketFrame extends JFrame {
     private final JList<String> scheduleList = new JList<>(listModel);
     private final JTextArea summaryArea;
 
-    public BusTicketFrame(AuthService authService, Customer currentUser, String selectedFlight,
+    public BusTicketFrame(AuthService authService, Customer currentUser, Flight selectedFlight,
                           Reservation reservation, ReservationService reservationService) {
         this.authService = authService;
         this.currentUser = currentUser;

@@ -14,10 +14,6 @@ public class PaymentService {
         return new Payment(paymentId, amount, "FAILED", failureReason);
     }
 
-    public boolean processRefund(String paymentId) {
-        return paymentId != null && !paymentId.trim().isEmpty();
-    }
-
     public Refund processRefund(Payment payment) {
         if (payment == null || !payment.isSuccess()) {
             return new Refund(null, 0, RefundStatus.FAILED, "Only successful payments can be refunded.");

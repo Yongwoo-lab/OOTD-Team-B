@@ -6,7 +6,7 @@ import java.util.Map;
 public class BusSeatSelectionFrame extends JFrame {
     private final AuthService authService;
     private final Customer currentUser;
-    private final String selectedFlight;
+    private final Flight selectedFlight;
     private final Reservation reservation;
     private final ReservationService reservationService;
     private final BusSchedule selectedSchedule;
@@ -15,7 +15,7 @@ public class BusSeatSelectionFrame extends JFrame {
     private final JTextArea summaryArea;
     private Integer selectedBusSeatNumber;
 
-    public BusSeatSelectionFrame(AuthService authService, Customer currentUser, String selectedFlight,
+    public BusSeatSelectionFrame(AuthService authService, Customer currentUser, Flight selectedFlight,
                                  Reservation reservation, ReservationService reservationService,
                                  BusSchedule selectedSchedule) {
         this.authService = authService;

@@ -1,65 +1,19 @@
 public abstract class AbstractReservationState implements ReservationState {
     @Override
-    public boolean selectSeat(Reservation reservation, String selectedSeatNumber) {
+    public boolean handle(Reservation reservation, ReservationAction action, Object payload) {
         return false;
     }
 
     @Override
-    public boolean confirm(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean markPaymentFailed(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean cancel(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean requestChange(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean completeChange(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean requestRefund(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean completeRefund(Reservation reservation) {
-        return false;
-    }
-
-    @Override
-    public boolean canPay() {
-        return false;
-    }
-
-    @Override
-    public boolean canCancel() {
-        return false;
-    }
-
-    @Override
-    public boolean canChange() {
-        return false;
-    }
-
-    @Override
-    public boolean canRefund() {
+    public boolean canHandle(ReservationAction action) {
         return false;
     }
 
     protected boolean hasText(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    protected String getTextPayload(Object payload) {
+        return payload instanceof String ? ((String) payload).trim() : null;
     }
 }

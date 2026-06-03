@@ -6,7 +6,7 @@ public class PaymentFrame extends JFrame {
     private final MileageService mileageService = new MileageService();
     private final AuthorizationService authorizationService = new AuthorizationService();
 
-    public PaymentFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation reservation, ReservationService reservationService) {
+    public PaymentFrame(AuthService authService, Customer currentUser, Flight selectedFlight, Reservation reservation, ReservationService reservationService) {
         this.paymentController = new PaymentController(reservationService);
         setTitle("Payment");
         setSize(680, 560);
@@ -31,10 +31,9 @@ public class PaymentFrame extends JFrame {
                 BorderFactory.createEmptyBorder(14, 14, 14, 14)
         ));
 
-        String flightInfo = selectedFlight;
-        if (flightInfo == null || flightInfo.trim().isEmpty()) {
-            flightInfo = "No flight selected.";
-        }
+        String flightInfo = formatFlight(selectedFlight);
+        double memberDiscount = mileageService.calculateMemberDiscount(currentUser, reservation.getFlightFare());
+        double discountedFlightFare = mileageService.calculateDiscountedFlightFare(currentUser, reservation.getFlightFare());
 
         infoArea.setText(
                 "Payment Information\n\n" +
@@ -43,9 +42,13 @@ public class PaymentFrame extends JFrame {
                         "Selected Seat: " + (reservation.hasSelectedSeat() ? reservation.getSelectedSeatNumber() : "Not selected") + "\n" +
                         "User Name: " + currentUser.getName() + "\n" +
                         "User Type: " + currentUser.getUserType() + "\n" +
+                        "Member Tier: " + currentUser.getMemberTier().getDisplayName()
+                        + " (" + currentUser.getMemberTier().getDiscountRateText() + ")\n" +
                         "Flight Fare: " + String.format("%,.0f KRW", reservation.getFlightFare()) + "\n" +
+                        "Member Tier Discount: " + String.format("%,.0f KRW", memberDiscount) + "\n" +
+                        "Discounted Flight Fare: " + String.format("%,.0f KRW", discountedFlightFare) + "\n" +
                         "Bus Fare: " + String.format("%,.0f KRW", reservation.getBusFare()) + "\n" +
-                        "Mileage discount applies to flight fare only."
+                        "Member tier and mileage discounts apply to flight fare only."
         );
 
         JPanel formPanel = new JPanel(new GridLayout(5, 2, 10, 10));
@@ -114,7 +117,7 @@ public class PaymentFrame extends JFrame {
 
             int mileageToUse = parseMileage(mileageField.getText());
             if (!mileageService.canUseMileage(currentUser, mileageToUse, reservation.getFlightFare())) {
-                JOptionPane.showMessageDialog(this, "Mileage amount is invalid. It cannot exceed your balance or the flight fare.");
+                JOptionPane.showMessageDialog(this, "Mileage amount is invalid. It cannot exceed your balance or the discounted flight fare.");
                 return;
             }
 
@@ -140,14 +143,18 @@ public class PaymentFrame extends JFrame {
             }
 
             Payment payment = paymentController.getLastPayment(reservation);
+            double appliedMemberDiscount = mileageService.calculateMemberDiscount(currentUser, reservation.getFlightFare());
             JOptionPane.showMessageDialog(this,
                     "Payment completed successfully.\n" +
                             "Reservation ID: " + reservation.getReservationId() + "\n" +
                             "Reservation Status: " + reservation.getStatus() + "\n" +
                             "Seat Number: " + reservation.getSelectedSeatNumber() + "\n" +
                             "Flight Fare: " + String.format("%,.0f KRW", reservation.getFlightFare()) + "\n" +
+                            "Member Tier: " + currentUser.getMemberTier().getDisplayName() + "\n" +
+                            "Member Discount: " + String.format("%,.0f KRW", appliedMemberDiscount) + "\n" +
                             "Bus Fare: " + String.format("%,.0f KRW", reservation.getBusFare()) + "\n" +
                             "Mileage Used: " + (payment == null ? 0 : payment.getMileageUsed()) + "\n" +
+                            "Total Discount: " + String.format("%,.0f KRW", payment == null ? appliedMemberDiscount : payment.getDiscountAmount()) + "\n" +
                             "Paid Amount: " + String.format("%,.0f KRW", payment == null ? finalAmount : payment.getAmount()) + "\n" +
                             "Ticket ID: " + ticket.getTicketId() + "\n" +
                             "Issue Date: " + ticket.getIssueDate() + "\n" +
@@ -188,5 +195,14 @@ public class PaymentFrame extends JFrame {
         } catch (NumberFormatException e) {
             return -1;
         }
+    }
+
+    private String formatFlight(Flight flight) {
+        if (flight == null) {
+            return "No flight selected.";
+        }
+        return flight.getFlightId() + " / " + flight.getDeparture() + " -> " + flight.getArrival()
+                + " / " + flight.getDate() + " " + flight.getDepartureTime() + " -> " + flight.getArrivalTime()
+                + " / " + String.format("%,.0f KRW", flight.getPrice());
     }
 }

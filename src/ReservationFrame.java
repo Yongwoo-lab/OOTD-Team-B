@@ -4,11 +4,11 @@ import java.awt.*;
 public class ReservationFrame extends JFrame {
     private final ReservationController reservationController = new ReservationController();
 
-    public ReservationFrame(AuthService authService, Customer currentUser, String selectedFlight) {
+    public ReservationFrame(AuthService authService, Customer currentUser, Flight selectedFlight) {
         this(authService, currentUser, selectedFlight, null);
     }
 
-    public ReservationFrame(AuthService authService, Customer currentUser, String selectedFlight, Reservation existingReservation) {
+    public ReservationFrame(AuthService authService, Customer currentUser, Flight selectedFlight, Reservation existingReservation) {
         setTitle("Reservation");
         setSize(560, 410);
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
@@ -32,14 +32,11 @@ public class ReservationFrame extends JFrame {
                 BorderFactory.createEmptyBorder(14, 14, 14, 14)
         ));
 
-        String flightInfo = selectedFlight;
-        if (flightInfo == null || flightInfo.trim().isEmpty()) {
-            flightInfo = "No flight selected.";
-        }
-
         Reservation reservation = existingReservation != null
                 ? existingReservation
                 : reservationController.bookFlight(currentUser, selectedFlight);
+        Flight flight = reservation == null ? selectedFlight : reservation.getFlight();
+        String flightInfo = formatFlight(flight);
 
         if (reservation == null) {
             JOptionPane.showMessageDialog(this, "Reservation requires member login.");
@@ -89,15 +86,29 @@ public class ReservationFrame extends JFrame {
         });
 
         busButton.addActionListener(e -> {
-            new BusTicketFrame(authService, currentUser, selectedFlight, reservation, reservationController.getReservationService());
+            new BusTicketFrame(authService, currentUser, flight, reservation, reservationController.getReservationService());
             dispose();
         });
 
         nextButton.addActionListener(e -> {
-            new SeatSelectionFrame(authService, currentUser, selectedFlight, reservation, reservationController.getReservationService());
+            new SeatSelectionFrame(authService, currentUser, flight, reservation, reservationController.getReservationService());
             dispose();
         });
 
         setVisible(true);
+    }
+
+    private String formatFlight(Flight flight) {
+        if (flight == null) {
+            return "No flight selected.";
+        }
+        return String.format("%s | %s -> %s | %s %s -> %s | %,.0f KRW",
+                flight.getFlightId(),
+                flight.getDeparture(),
+                flight.getArrival(),
+                flight.getDate(),
+                flight.getDepartureTime(),
+                flight.getArrivalTime(),
+                flight.getPrice());
     }
 }

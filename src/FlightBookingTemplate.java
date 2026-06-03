@@ -10,14 +10,14 @@ public class FlightBookingTemplate extends AbstractBookingTemplate {
         if (reservation == null) {
             return "Reservation does not exist.";
         }
+        if (request == null) {
+            return "Payment request does not exist.";
+        }
         if (!reservation.hasSelectedSeat()) {
             return "Seat must be selected before payment.";
         }
         if (!reservation.canPay()) {
             return "Reservation status does not allow payment: " + reservation.getStatus();
-        }
-        if (request == null) {
-            return "Payment request does not exist.";
         }
         if (!mileageService.canUseMileage(reservation.getCustomer(), request.getMileageToUse(), reservation.getFlightFare())) {
             return "Mileage amount is invalid or exceeds the flight fare.";

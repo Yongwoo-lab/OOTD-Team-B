@@ -1,27 +1,18 @@
 public interface ReservationState {
     ReservationStatus getStatus();
 
-    boolean selectSeat(Reservation reservation, String selectedSeatNumber);
+    boolean handle(Reservation reservation, ReservationAction action, Object payload);
 
-    boolean confirm(Reservation reservation);
+    boolean canHandle(ReservationAction action);
+}
 
-    boolean markPaymentFailed(Reservation reservation);
-
-    boolean cancel(Reservation reservation);
-
-    boolean requestChange(Reservation reservation);
-
-    boolean completeChange(Reservation reservation);
-
-    boolean requestRefund(Reservation reservation);
-
-    boolean completeRefund(Reservation reservation);
-
-    boolean canPay();
-
-    boolean canCancel();
-
-    boolean canChange();
-
-    boolean canRefund();
+enum ReservationAction {
+    SELECT_SEAT,
+    CONFIRM,
+    MARK_PAYMENT_FAILED,
+    CANCEL,
+    REQUEST_CHANGE,
+    COMPLETE_CHANGE,
+    REQUEST_REFUND,
+    COMPLETE_REFUND
 }

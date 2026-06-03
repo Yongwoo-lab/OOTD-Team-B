@@ -45,7 +45,7 @@ public class MainFrame extends JFrame {
         AppTheme.styleField(emailField);
         AppTheme.styleField(passwordField);
 
-        formPanel.add(createFormLabel("Email"));
+        formPanel.add(createFormLabel("Email / Admin ID"));
         formPanel.add(emailField);
         formPanel.add(createFormLabel("Password"));
         formPanel.add(passwordField);
@@ -126,7 +126,11 @@ public class MainFrame extends JFrame {
         }
 
         JOptionPane.showMessageDialog(this, "Login successful.");
-        new SearchFlightFrame(authService, user);
+        if (user instanceof Admin) {
+            new AdminUserManagementFrame(authService, user);
+        } else {
+            new SearchFlightFrame(authService, user);
+        }
         dispose();
     }
 

@@ -79,7 +79,7 @@ public class UserInfoFrame extends JFrame {
 
     private JPanel createProfilePanel() {
         JPanel profilePanel = AppTheme.createCardPanel();
-        profilePanel.setLayout(new GridLayout(7, 1, 8, 8));
+        profilePanel.setLayout(new GridLayout(8, 1, 8, 8));
 
         JLabel sectionTitle = new JLabel("Account Summary");
         sectionTitle.setForeground(AppTheme.NAVY);
@@ -95,6 +95,8 @@ public class UserInfoFrame extends JFrame {
         profilePanel.add(createInfoLabel("Email", currentUser.getEmail()));
         profilePanel.add(createInfoLabel("Phone", currentUser.getPhoneNumber()));
         profilePanel.add(createInfoLabel("User Type", currentUser.getUserType()));
+        profilePanel.add(createInfoLabel("Member Tier", currentUser.getMemberTier().getDisplayName()
+                + " (" + currentUser.getMemberTier().getDiscountRateText() + ")"));
         profilePanel.add(mileageValueLabel);
 
         return profilePanel;

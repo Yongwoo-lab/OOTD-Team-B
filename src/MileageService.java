@@ -1,5 +1,6 @@
 public class MileageService {
     private static final double EARN_RATE = 0.10;
+    private final MemberFareDiscountService memberFareDiscountService = new MemberFareDiscountService();
 
     public int getCurrentMileage(Customer user) {
         if (user instanceof SkyPassMember) {
@@ -17,6 +18,11 @@ public class MileageService {
     }
 
     public boolean canUseMileage(Customer user, int mileageToUse, double flightFare) {
+        double payableFlightFare = calculateDiscountedFlightFare(user, flightFare);
+        return canUseMileageAgainstPayableFlightFare(user, mileageToUse, payableFlightFare);
+    }
+
+    private boolean canUseMileageAgainstPayableFlightFare(Customer user, int mileageToUse, double payableFlightFare) {
         if (!(user instanceof SkyPassMember)) {
             return mileageToUse == 0;
         }
@@ -26,26 +32,43 @@ public class MileageService {
         if (mileageToUse == 0) {
             return true;
         }
-        return mileageToUse <= getCurrentMileage(user) && mileageToUse <= flightFare;
+        return mileageToUse <= getCurrentMileage(user) && mileageToUse <= payableFlightFare;
     }
 
     public double calculateFlightDiscount(Customer user, int mileageToUse, double flightFare) {
-        if (!canUseMileage(user, mileageToUse, flightFare)) {
+        double payableFlightFare = calculateDiscountedFlightFare(user, flightFare);
+        if (!canUseMileageAgainstPayableFlightFare(user, mileageToUse, payableFlightFare)) {
             return 0;
         }
-        return Math.min(mileageToUse, flightFare);
+        return Math.min(mileageToUse, payableFlightFare);
     }
 
     public double calculateFinalAmount(Reservation reservation, int mileageToUse) {
         if (reservation == null) {
             return 0;
         }
-        double discount = calculateFlightDiscount(
+        double discountedFlightFare = calculateDiscountedFlightFare(
+                reservation.getCustomer(),
+                reservation.getFlightFare()
+        );
+        double mileageDiscount = calculateFlightDiscount(
                 reservation.getCustomer(),
                 mileageToUse,
                 reservation.getFlightFare()
         );
-        return reservation.getFlightFare() - discount + reservation.getBusFare();
+        return discountedFlightFare - mileageDiscount + reservation.getBusFare();
+    }
+
+    public double calculateDiscountedFlightFare(Customer user, double flightFare) {
+        return memberFareDiscountService.calculateDiscountedFlightFare(user, flightFare);
+    }
+
+    public double calculateMemberDiscount(Customer user, double flightFare) {
+        return memberFareDiscountService.calculateMemberDiscount(user, flightFare);
+    }
+
+    public String getMemberDiscountMessage(Customer user, double flightFare) {
+        return memberFareDiscountService.getDiscountMessage(user, flightFare);
     }
 
     public boolean useMileage(Customer user, int mileageToUse, AuthService authService) {

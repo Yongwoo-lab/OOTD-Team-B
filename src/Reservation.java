@@ -45,17 +45,6 @@ public class Reservation {
         return flight;
     }
 
-    public void changeFlight(Flight flight) {
-        if (flight == null) {
-            return;
-        }
-        requestChange();
-        this.flight = flight;
-        clearSelectedSeat();
-        this.ticket = null;
-        completeChange();
-    }
-
     public Payment getPayment() {
         return payment;
     }
@@ -92,8 +81,19 @@ public class Reservation {
         return selectedSeatNumber != null && !selectedSeatNumber.trim().isEmpty();
     }
 
+    public boolean request(ReservationAction action) {
+        return request(action, null);
+    }
+
+    public boolean request(ReservationAction action, Object payload) {
+        if (action == null) {
+            return false;
+        }
+        return state.handle(this, action, payload);
+    }
+
     public boolean selectSeat(String selectedSeatNumber) {
-        return state.selectSeat(this, selectedSeatNumber);
+        return request(ReservationAction.SELECT_SEAT, selectedSeatNumber);
     }
 
     public void attachPayment(Payment payment) {
@@ -101,11 +101,11 @@ public class Reservation {
     }
 
     public boolean confirm() {
-        return state.confirm(this);
+        return request(ReservationAction.CONFIRM);
     }
 
     public boolean markFailed() {
-        if (state.markPaymentFailed(this)) {
+        if (request(ReservationAction.MARK_PAYMENT_FAILED)) {
             return true;
         }
         state = hasSelectedSeat() ? new SeatSelectedReservationState() : new PendingReservationState();
@@ -113,40 +113,40 @@ public class Reservation {
     }
 
     public boolean cancel() {
-        return state.cancel(this);
+        return request(ReservationAction.CANCEL);
     }
 
     public boolean isCancellable() {
-        return state.canCancel();
+        return state.canHandle(ReservationAction.CANCEL);
     }
 
     public boolean canPay() {
-        return state.canPay();
+        return state.canHandle(ReservationAction.CONFIRM);
     }
 
     public boolean canChange() {
-        return state.canChange();
+        return state.canHandle(ReservationAction.REQUEST_CHANGE);
     }
 
     public boolean canRefund() {
-        return state.canRefund();
+        return state.canHandle(ReservationAction.REQUEST_REFUND);
     }
 
     public boolean requestChange() {
-        return state.requestChange(this);
+        return request(ReservationAction.REQUEST_CHANGE);
     }
 
     public boolean completeChange() {
-        return state.completeChange(this);
+        return request(ReservationAction.COMPLETE_CHANGE);
     }
 
     public boolean requestRefund() {
-        return state.requestRefund(this);
+        return request(ReservationAction.REQUEST_REFUND);
     }
 
     public boolean completeRefund(Refund refund) {
         this.refund = refund;
-        return state.completeRefund(this);
+        return request(ReservationAction.COMPLETE_REFUND, refund);
     }
 
     public void issueTicket(Ticket ticket) {

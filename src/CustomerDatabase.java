@@ -10,6 +10,7 @@ import java.util.List;
 public class CustomerDatabase {
     private static final String DATA_DIR = "data";
     private static final String CUSTOMER_FILE = DATA_DIR + File.separator + "customers.txt";
+    private final UserFactoryProvider userFactoryProvider = new UserFactoryProvider();
 
     public List<Customer> loadCustomers() {
         ensureDatabaseExists();
@@ -51,27 +52,28 @@ public class CustomerDatabase {
         }
 
         String[] parts = line.split("\\|", -1);
-        if (parts.length != 7) {
+        if (parts.length < 7) {
             return null;
         }
 
         String customerId = parts[0];
-        String userType = parts[1];
+        UserType userType = UserType.fromDatabaseValue(parts[1]);
         String name = parts[2];
         String email = parts[3];
         String phoneNumber = parts[4];
         String password = parts[5];
         int mileage = parseMileage(parts[6]);
+        MemberTier memberTier = parts.length >= 8 ? MemberTier.fromStorageValue(parts[7]) : MemberTier.BASIC;
+        boolean skyPassMember = UserType.isSkyPassDatabaseValue(parts[1]);
 
-        if ("SkyPass".equalsIgnoreCase(userType)) {
-            return new SkyPassMember(customerId, name, email, phoneNumber, password, mileage);
-        }
-
-        return new Customer(customerId, name, email, phoneNumber, password);
+        Customer customer = userFactoryProvider.getFactory(userType)
+                .createUser(customerId, name, email, phoneNumber, password, mileage, skyPassMember);
+        customer.updateMemberTier(memberTier);
+        return customer;
     }
 
     private String formatCustomer(Customer customer) {
-        String userType = customer instanceof SkyPassMember ? "SkyPass" : "Customer";
+        String userType = getStorageUserType(customer);
         int mileage = customer instanceof SkyPassMember
                 ? ((SkyPassMember) customer).getMileage()
                 : 0;
@@ -83,7 +85,8 @@ public class CustomerDatabase {
                 customer.getEmail(),
                 customer.getPhoneNumber(),
                 customer.getPassword(),
-                String.valueOf(mileage)
+                String.valueOf(mileage),
+                customer.getMemberTier().getStorageName()
         );
     }
 
@@ -104,8 +107,12 @@ public class CustomerDatabase {
         }
 
         List<Customer> defaultCustomers = new ArrayList<>();
-        defaultCustomers.add(new Customer("C001", "Kim", "kim@test.com", "010-1111-2222", "1234"));
-        defaultCustomers.add(new SkyPassMember("S001", "Lee", "lee@test.com", "010-3333-4444", "1234", 5000));
+        defaultCustomers.add(userFactoryProvider.getFactory(UserType.ADMIN)
+                .createUser("admin", "Administrator", "admin", "Not provided", "admin1234"));
+        defaultCustomers.add(userFactoryProvider.getFactory(UserType.MEMBER)
+                .createUser("C001", "Kim", "kim@test.com", "010-1111-2222", "1234"));
+        defaultCustomers.add(userFactoryProvider.getFactory(UserType.MEMBER)
+                .createUser("S001", "Lee", "lee@test.com", "010-3333-4444", "1234", 5000, true));
         saveCustomers(defaultCustomers);
     }
 
@@ -114,5 +121,15 @@ public class CustomerDatabase {
         if (!dataDirectory.exists()) {
             dataDirectory.mkdirs();
         }
+    }
+
+    private String getStorageUserType(Customer customer) {
+        if (customer instanceof Admin) {
+            return UserType.ADMIN.getStorageName();
+        }
+        if (customer instanceof SkyPassMember) {
+            return "SkyPass";
+        }
+        return UserType.MEMBER.getStorageName();
     }
 }

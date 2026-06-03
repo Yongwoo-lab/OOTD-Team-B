@@ -4,7 +4,7 @@ public class AuthorizationService {
     }
 
     public boolean canBookFlight(Customer user) {
-        return user != null && !(user instanceof Guest);
+        return user != null && !(user instanceof Guest) && !(user instanceof Admin);
     }
 
     public boolean canUseMileage(Customer user) {
@@ -12,7 +12,11 @@ public class AuthorizationService {
     }
 
     public boolean canManageReservations(Customer user) {
-        return user != null && !(user instanceof Guest);
+        return user != null && !(user instanceof Guest) && !(user instanceof Admin);
+    }
+
+    public boolean canManageUsers(Customer user) {
+        return user instanceof Admin;
     }
 
     public boolean canPurchaseBusTicket(Customer user) {

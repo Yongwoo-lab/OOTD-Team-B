@@ -4,6 +4,7 @@ public class Customer {
     protected String email;
     protected String phoneNumber;
     protected String password;
+    private MemberTier memberTier;
 
     public Customer(String customerId, String name, String email, String password) {
         this(customerId, name, email, "", password);
@@ -15,6 +16,7 @@ public class Customer {
         this.email = email;
         this.phoneNumber = phoneNumber;
         this.password = password;
+        this.memberTier = MemberTier.BASIC;
     }
 
     public String getCustomerId() {
@@ -37,6 +39,10 @@ public class Customer {
         return password;
     }
 
+    public MemberTier getMemberTier() {
+        return memberTier;
+    }
+
     public boolean checkPassword(String password) {
         return this.password.equals(password);
     }
@@ -51,6 +57,10 @@ public class Customer {
 
     public void updatePassword(String password) {
         this.password = password;
+    }
+
+    public void updateMemberTier(MemberTier memberTier) {
+        this.memberTier = memberTier == null ? MemberTier.BASIC : memberTier;
     }
 
     public String getUserType() {

@@ -5,8 +5,16 @@ public class RefundRequestedReservationState extends AbstractReservationState {
     }
 
     @Override
-    public boolean completeRefund(Reservation reservation) {
-        reservation.setState(new RefundedReservationState());
-        return true;
+    public boolean handle(Reservation reservation, ReservationAction action, Object payload) {
+        if (action == ReservationAction.COMPLETE_REFUND) {
+            reservation.setState(new RefundedReservationState());
+            return true;
+        }
+        return false;
+    }
+
+    @Override
+    public boolean canHandle(ReservationAction action) {
+        return action == ReservationAction.COMPLETE_REFUND;
     }
 }

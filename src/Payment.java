@@ -68,7 +68,11 @@ public class Payment {
         return failureReason;
     }
 
-    public Payment withMileageDiscount(double originalAmount, int mileageUsed, double discountAmount) {
+    public Payment withDiscountSummary(double originalAmount, int mileageUsed, double discountAmount) {
         return new Payment(paymentId, amount, status, failureReason, method, originalAmount, mileageUsed, discountAmount);
+    }
+
+    public Payment withMileageDiscount(double originalAmount, int mileageUsed, double discountAmount) {
+        return withDiscountSummary(originalAmount, mileageUsed, discountAmount);
     }
 }

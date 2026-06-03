@@ -5,50 +5,40 @@ public class SeatSelectedReservationState extends AbstractReservationState {
     }
 
     @Override
-    public boolean selectSeat(Reservation reservation, String selectedSeatNumber) {
-        if (!hasText(selectedSeatNumber)) {
-            return false;
+    public boolean handle(Reservation reservation, ReservationAction action, Object payload) {
+        if (action == ReservationAction.SELECT_SEAT) {
+            String selectedSeatNumber = getTextPayload(payload);
+            if (!hasText(selectedSeatNumber)) {
+                return false;
+            }
+            reservation.setSelectedSeatNumber(selectedSeatNumber);
+            return true;
         }
-        reservation.setSelectedSeatNumber(selectedSeatNumber.trim());
-        return true;
+        if (action == ReservationAction.CONFIRM) {
+            reservation.setState(new ConfirmedReservationState());
+            return true;
+        }
+        if (action == ReservationAction.MARK_PAYMENT_FAILED) {
+            reservation.setState(new SeatSelectedReservationState());
+            return true;
+        }
+        if (action == ReservationAction.CANCEL) {
+            reservation.setState(new CancelledReservationState());
+            return true;
+        }
+        if (action == ReservationAction.REQUEST_CHANGE) {
+            reservation.setState(new ChangeRequestedReservationState());
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean confirm(Reservation reservation) {
-        reservation.setState(new ConfirmedReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean markPaymentFailed(Reservation reservation) {
-        reservation.setState(new SeatSelectedReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean cancel(Reservation reservation) {
-        reservation.setState(new CancelledReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean requestChange(Reservation reservation) {
-        reservation.setState(new ChangeRequestedReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean canPay() {
-        return true;
-    }
-
-    @Override
-    public boolean canCancel() {
-        return true;
-    }
-
-    @Override
-    public boolean canChange() {
-        return true;
+    public boolean canHandle(ReservationAction action) {
+        return action == ReservationAction.SELECT_SEAT
+                || action == ReservationAction.CONFIRM
+                || action == ReservationAction.MARK_PAYMENT_FAILED
+                || action == ReservationAction.CANCEL
+                || action == ReservationAction.REQUEST_CHANGE;
     }
 }

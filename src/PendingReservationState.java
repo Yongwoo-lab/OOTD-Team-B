@@ -5,34 +5,31 @@ public class PendingReservationState extends AbstractReservationState {
     }
 
     @Override
-    public boolean selectSeat(Reservation reservation, String selectedSeatNumber) {
-        if (!hasText(selectedSeatNumber)) {
-            return false;
+    public boolean handle(Reservation reservation, ReservationAction action, Object payload) {
+        if (action == ReservationAction.SELECT_SEAT) {
+            String selectedSeatNumber = getTextPayload(payload);
+            if (!hasText(selectedSeatNumber)) {
+                return false;
+            }
+            reservation.setSelectedSeatNumber(selectedSeatNumber);
+            reservation.setState(new SeatSelectedReservationState());
+            return true;
         }
-        reservation.setSelectedSeatNumber(selectedSeatNumber.trim());
-        reservation.setState(new SeatSelectedReservationState());
-        return true;
+        if (action == ReservationAction.CANCEL) {
+            reservation.setState(new CancelledReservationState());
+            return true;
+        }
+        if (action == ReservationAction.REQUEST_CHANGE) {
+            reservation.setState(new ChangeRequestedReservationState());
+            return true;
+        }
+        return false;
     }
 
     @Override
-    public boolean cancel(Reservation reservation) {
-        reservation.setState(new CancelledReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean requestChange(Reservation reservation) {
-        reservation.setState(new ChangeRequestedReservationState());
-        return true;
-    }
-
-    @Override
-    public boolean canCancel() {
-        return true;
-    }
-
-    @Override
-    public boolean canChange() {
-        return true;
+    public boolean canHandle(ReservationAction action) {
+        return action == ReservationAction.SELECT_SEAT
+                || action == ReservationAction.CANCEL
+                || action == ReservationAction.REQUEST_CHANGE;
     }
 }

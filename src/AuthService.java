@@ -1,20 +1,29 @@
 import java.util.List;
 
 public class AuthService {
+    private static final String DEFAULT_ADMIN_ID = "admin";
+    private static final String DEFAULT_ADMIN_PASSWORD = "admin1234";
     private List<Customer> customers;
     private CustomerDatabase customerDatabase;
+    private UserFactoryProvider userFactoryProvider;
+    private UserManagementService userManagementService;
     private int nextCustomerNumber;
     private int nextSkyPassNumber;
 
     public AuthService() {
         customerDatabase = new CustomerDatabase();
+        userFactoryProvider = new UserFactoryProvider();
         customers = customerDatabase.loadCustomers();
+        userManagementService = new UserManagementService(customers, customerDatabase, userFactoryProvider);
+        userManagementService.ensureDefaultAdminAccount(DEFAULT_ADMIN_ID, DEFAULT_ADMIN_PASSWORD);
         updateNextCustomerNumbers();
     }
 
-    public Customer login(String email, String password) {
+    public Customer login(String loginId, String password) {
+        loginId = normalize(loginId);
         for (Customer customer : customers) {
-            if (customer.getEmail().equalsIgnoreCase(email)
+            if ((customer.getEmail().equalsIgnoreCase(loginId)
+                    || customer.getCustomerId().equalsIgnoreCase(loginId))
                     && customer.checkPassword(password)) {
                 return customer;
             }
@@ -27,9 +36,11 @@ public class AuthService {
     }
 
     public Customer signup(String name, String email, String phoneNumber, String password, String confirmPassword, boolean isSkyPass) {
-        name = name.trim();
-        email = email.trim();
-        phoneNumber = phoneNumber.trim();
+        name = normalize(name);
+        email = normalize(email);
+        phoneNumber = normalize(phoneNumber);
+        password = normalize(password);
+        confirmPassword = normalize(confirmPassword);
 
         if (name.isEmpty() || email.isEmpty() || phoneNumber.isEmpty() || password.isEmpty() || confirmPassword.isEmpty()) {
             return null;
@@ -43,15 +54,10 @@ public class AuthService {
             return null;
         }
 
-        Customer newUser;
-
-        if (isSkyPass) {
-            String id = String.format("S%03d", nextSkyPassNumber++);
-            newUser = new SkyPassMember(id, name, email, phoneNumber, password, 0);
-        } else {
-            String id = String.format("C%03d", nextCustomerNumber++);
-            newUser = new Customer(id, name, email, phoneNumber, password);
-        }
+        UserType userType = UserType.fromSignup();
+        String id = createMemberId(isSkyPass);
+        UserFactory userFactory = userFactoryProvider.getFactory(userType);
+        Customer newUser = userFactory.createUser(id, name, email, phoneNumber, password, 0, isSkyPass);
 
         customers.add(newUser);
         saveCustomerData();
@@ -59,12 +65,16 @@ public class AuthService {
     }
 
     public Guest continueAsGuest() {
-        return new Guest();
+        return (Guest) userFactoryProvider.getFactory(UserType.GUEST).createUser();
+    }
+
+    public UserManagementService getUserManagementService() {
+        return userManagementService;
     }
 
     public Customer findCustomerByNameAndPhone(String name, String phoneNumber) {
-        name = name.trim();
-        phoneNumber = phoneNumber.trim();
+        name = normalize(name);
+        phoneNumber = normalize(phoneNumber);
 
         for (Customer customer : customers) {
             if (customer.getName().equalsIgnoreCase(name)
@@ -76,8 +86,8 @@ public class AuthService {
     }
 
     public Customer findCustomerByEmailAndPhone(String email, String phoneNumber) {
-        email = email.trim();
-        phoneNumber = phoneNumber.trim();
+        email = normalize(email);
+        phoneNumber = normalize(phoneNumber);
 
         for (Customer customer : customers) {
             if (customer.getEmail().equalsIgnoreCase(email)
@@ -89,7 +99,9 @@ public class AuthService {
     }
 
     public boolean resetPassword(String email, String phoneNumber, String password, String confirmPassword) {
-        if (password == null || confirmPassword == null || password.isEmpty() || !password.equals(confirmPassword)) {
+        password = normalize(password);
+        confirmPassword = normalize(confirmPassword);
+        if (password.isEmpty() || !password.equals(confirmPassword)) {
             return false;
         }
 
@@ -104,8 +116,9 @@ public class AuthService {
     }
 
     public boolean isEmailDuplicated(String email) {
+        email = normalize(email);
         for (Customer customer : customers) {
-            if (customer.getEmail().equalsIgnoreCase(email.trim())) {
+            if (customer.getEmail().equalsIgnoreCase(email)) {
                 return true;
             }
         }
@@ -113,8 +126,9 @@ public class AuthService {
     }
 
     public boolean isEmailDuplicatedByAnotherUser(String email, Customer currentUser) {
+        email = normalize(email);
         for (Customer customer : customers) {
-            if (customer != currentUser && customer.getEmail().equalsIgnoreCase(email.trim())) {
+            if (customer != currentUser && customer.getEmail().equalsIgnoreCase(email)) {
                 return true;
             }
         }
@@ -150,5 +164,16 @@ public class AuthService {
         } catch (NumberFormatException e) {
             return 0;
         }
+    }
+
+    private String createMemberId(boolean skyPassMember) {
+        if (skyPassMember) {
+            return String.format("S%03d", nextSkyPassNumber++);
+        }
+        return String.format("%s%03d", UserType.MEMBER.getIdPrefix(), nextCustomerNumber++);
+    }
+
+    private String normalize(String value) {
+        return value == null ? "" : value.trim();
     }
 }

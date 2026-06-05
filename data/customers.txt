@@ -3,4 +3,4 @@ C001|Customer|Kim|kim@test.com|010-1111-2222|1234|0|BASIC
 S002|SkyPass|Yongwoo Kim|1123@naver.com|010-1234-1234|1234|0|BASIC
 S003|SkyPass|yongwoo|1234@1234.com|010-1234-1234|1234|0|BASIC
 S004|SkyPass|lee|lee@naver.com|12345678|ㅂㅈㄷㄱ1234|0|BASIC
-S005|SkyPass|lee|123@naver.com|12345678|qwer1234|146569|BASIC
+S005|SkyPass|lee|123@naver.com|12345678|qwer1234|26253|BASIC

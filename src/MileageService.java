@@ -47,20 +47,24 @@ public class MileageService {
         if (reservation == null) {
             return 0;
         }
-        double discountedFlightFare = calculateDiscountedFlightFare(
+        FlightFare payableFlightFare = createPayableFlightFare(
                 reservation.getCustomer(),
-                reservation.getFlightFare()
+                reservation.getFlightFare(),
+                mileageToUse
         );
-        double mileageDiscount = calculateFlightDiscount(
-                reservation.getCustomer(),
-                mileageToUse,
-                reservation.getFlightFare()
-        );
-        return discountedFlightFare - mileageDiscount + reservation.getBusFare();
+        return payableFlightFare.getAmount() + reservation.getBusFare();
     }
 
     public double calculateDiscountedFlightFare(Customer user, double flightFare) {
         return memberFareDiscountService.calculateDiscountedFlightFare(user, flightFare);
+    }
+
+    public FlightFare createPayableFlightFare(Customer user, double flightFare, int mileageToUse) {
+        FlightFare fare = memberFareDiscountService.createFare(user, flightFare);
+        if (mileageToUse <= 0) {
+            return fare;
+        }
+        return new MileageFlightFareDecorator(fare, mileageToUse);
     }
 
     public double calculateMemberDiscount(Customer user, double flightFare) {

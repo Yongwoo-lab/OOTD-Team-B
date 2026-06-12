@@ -10,6 +10,7 @@ public class BusSeatSelectionFrame extends JFrame {
     private final Reservation reservation;
     private final ReservationService reservationService;
     private final BusSchedule selectedSchedule;
+    private final ReservationRepository reservationRepository = ReservationRepository.getInstance();
     private final Map<Integer, JButton> busSeatButtons = new HashMap<>();
     private final JPanel busSeatPanel = new JPanel(new GridBagLayout());
     private final JTextArea summaryArea;
@@ -190,8 +191,7 @@ public class BusSeatSelectionFrame extends JFrame {
                 && selectedSchedule.getScheduleId().equals(currentSchedule)) {
             return false;
         }
-        int seatHash = Math.floorMod((selectedSchedule.getScheduleId() + "-" + seatNumber).hashCode(), 100);
-        return seatHash < 8;
+        return reservationRepository.isBusSeatReserved(selectedSchedule, String.valueOf(seatNumber));
     }
 
     private JTextArea createSummaryArea() {

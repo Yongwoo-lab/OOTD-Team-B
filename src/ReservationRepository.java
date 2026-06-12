@@ -46,4 +46,52 @@ public class ReservationRepository {
         }
         return null;
     }
+
+    public boolean isFlightSeatReserved(Flight flight, String seatNumber) {
+        if (flight == null || seatNumber == null || seatNumber.trim().isEmpty()) {
+            return false;
+        }
+
+        for (Reservation reservation : reservations) {
+            if (!isActiveReservation(reservation)) {
+                continue;
+            }
+            Flight reservedFlight = reservation.getFlight();
+            if (reservedFlight != null
+                    && flight.getFlightId().equals(reservedFlight.getFlightId())
+                    && seatNumber.equals(reservation.getSelectedSeatNumber())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public boolean isBusSeatReserved(BusSchedule schedule, String seatNumber) {
+        if (schedule == null || seatNumber == null || seatNumber.trim().isEmpty()) {
+            return false;
+        }
+
+        for (Reservation reservation : reservations) {
+            if (!isActiveReservation(reservation) || !reservation.hasBusTicket()) {
+                continue;
+            }
+            BusTicket ticket = reservation.getBusTicket();
+            BusSchedule reservedSchedule = ticket.getSchedule();
+            if (reservedSchedule != null
+                    && schedule.getScheduleId().equals(reservedSchedule.getScheduleId())
+                    && seatNumber.equals(ticket.getSeatNumber())) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean isActiveReservation(Reservation reservation) {
+        if (reservation == null) {
+            return false;
+        }
+        ReservationStatus status = reservation.getStatus();
+        return status != ReservationStatus.CANCELLED
+                && status != ReservationStatus.REFUNDED;
+    }
 }

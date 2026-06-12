@@ -65,10 +65,11 @@ public class ReservationService {
         }
 
         Payment payment = reservation.getPayment();
-        if (payment != null && payment.isSuccess() && paymentService != null) {
-            if (reservation.canRefund()) {
-                reservation.requestRefund();
+        if (payment != null && payment.isSuccess()) {
+            if (paymentService == null || !reservation.canRefund()) {
+                return false;
             }
+            reservation.requestRefund();
             Refund refund = paymentService.processRefund(payment);
             if (!refund.isCompleted()) {
                 return false;
@@ -77,6 +78,7 @@ public class ReservationService {
             mileageService.restoreMileage(reservation.getCustomer(), payment.getMileageUsed(), authService);
             double paidFlightFare = Math.max(0, reservation.getFlightFare() - payment.getDiscountAmount());
             mileageService.revokeEarnedMileage(reservation.getCustomer(), paidFlightFare, authService);
+            return true;
         }
 
         reservation.cancel();

@@ -149,8 +149,10 @@ public class ReservationHistoryFrame extends JFrame {
             return;
         }
 
-        String message = "Reservation cancelled successfully.";
         Refund refund = selectedReservation.getRefund();
+        String message = refund == null
+                ? "Reservation cancelled successfully."
+                : "Reservation refunded successfully.";
         if (refund != null) {
             message += "\nRefund ID: " + refund.getRefundId()
                     + "\nRefund Amount: " + String.format("%,.0f KRW", refund.getAmount())
@@ -260,12 +262,21 @@ public class ReservationHistoryFrame extends JFrame {
             metaPanel.add(createMetaLabel("항공권번호 Ticket", reservation == null || reservation.getTicket() == null ? "-" : reservation.getTicket().getTicketId()));
             metaPanel.add(createMetaLabel("예약번호 Booking", reservation == null ? "-" : reservation.getReservationId()));
             metaPanel.add(createMetaLabel("예약상태 Status", reservation == null ? "-" : String.valueOf(reservation.getStatus())));
-            metaPanel.add(createMetaLabel("총 결제금액 Total", reservation == null ? "-" : String.format("%,.0f KRW", reservation.getTotalFare())));
+            metaPanel.add(createMetaLabel("총 결제금액 Total", formatPaidAmount(reservation)));
             metaPanel.add(createMetaLabel("버스 포함 Bus", reservation != null && reservation.hasBusTicket() ? "Yes" : "No"));
 
             panel.add(titleLabel, BorderLayout.NORTH);
             panel.add(metaPanel, BorderLayout.CENTER);
             return panel;
+        }
+
+        private String formatPaidAmount(Reservation reservation) {
+            if (reservation == null) {
+                return "-";
+            }
+            Payment payment = reservation.getPayment();
+            double amount = payment == null ? reservation.getTotalFare() : payment.getAmount();
+            return String.format("%,.0f KRW", amount);
         }
 
         private JPanel createSectionTitle(String koreanTitle, String englishTitle) {

@@ -4,6 +4,7 @@ import java.util.List;
 public abstract class AirplaneSeatLayoutStrategy implements SeatLayoutStrategy {
     private static final String[] COLUMNS = {"A", "B", "C", "D", "E", "F"};
     private static final int AISLE_INDEX = 3;
+    private final ReservationRepository reservationRepository = ReservationRepository.getInstance();
     private final String aircraftType;
     private final int rowCount;
 
@@ -60,8 +61,6 @@ public abstract class AirplaneSeatLayoutStrategy implements SeatLayoutStrategy {
     }
 
     private boolean isOccupied(Flight flight, String seatNumber) {
-        String flightKey = flight == null ? "" : flight.getFlightId();
-        int seatHash = Math.floorMod((flightKey + "-" + seatNumber).hashCode(), 100);
-        return seatHash < 10;
+        return reservationRepository.isFlightSeatReserved(flight, seatNumber);
     }
 }
